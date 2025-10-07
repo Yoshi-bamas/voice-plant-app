@@ -39,9 +39,9 @@ export class Particle {
     update(): void {
         this.x += this.vx;
         this.y += this.vy;
-        this.vy += 0.2;  // 重力加速度
-        this.vx *= 0.98;  // 空気抵抗（水平方向）
-        this.life -= 0.01;  // 寿命減少（100フレームで消滅）
+        this.vy += 0.3;  // 重力加速度（強化: 0.2→0.3）
+        this.vx *= 0.96;  // 空気抵抗（強化: 0.98→0.96）
+        this.life -= 0.012;  // 寿命減少（約83フレームで消滅、やや速く）
     }
 
     /**

@@ -76,49 +76,204 @@
 - [x] 10-4. 左右に葉を描画（±30度回転）
 - [x] 10-5. 高い声で葉が増えることを確認
 
-## フェーズ11-14統合: Clear!エフェクトシステム（プロトタイプ）
-**目標:** PlantViewとFractalPlantViewでClear!を実装。モジュール化優先。
+## フェーズ11-15: v0.x完了 ✅
+**達成内容:**
+- [x] エフェクトモジュール（Particle, ParticleSystem, ConcreteEffect）
+- [x] Clear!エフェクト統合（PlantView, FractalPlantView）
+- [x] 粒子エフェクト強化（150個、花色5種、グロー）
+- [x] ひび割れ強化（12本、枝分かれ、立体感）
+- [x] Simplexノイズ茎揺らぎ（±15px、10セグメント）
+- [x] Easy Mode実装（super.update()方式）
 
-### 11-A: エフェクトモジュール作成
-- [ ] 11-A-1. effects/Particle.ts作成（位置・速度・life管理）
-- [ ] 11-A-2. effects/ParticleSystem.ts作成（burst/update/draw）
-- [ ] 11-A-3. effects/ConcreteEffect.ts作成（背景・ひび割れ）
-- [ ] 11-A-4. 各モジュールの型定義を確認
+**v0.x現在の動作:**
+- 音量0.8以上でClear!トリガー → 粒子バースト、ひび割れ
+- **問題点:** Clear後も音量で植物が縮む（v1.0で解決）
 
-### 11-B: Clear!メッセージ（DOM操作）
-- [ ] 11-B-1. index.htmlにclearMessage要素追加
-- [ ] 11-B-2. PlantView.tsにclearTriggeredフラグ追加
-- [ ] 11-B-3. volume > 0.8判定でshowClearMessage()実行
-- [ ] 11-B-4. 2秒後にフラグリセット
-- [ ] 11-B-5. FractalPlantView.tsにも同様の実装
+---
 
-### 11-C: 粒子エフェクト統合
-- [ ] 11-C-1. PlantViewにParticleSystemインスタンス追加
-- [ ] 11-C-2. Clear!時にparticles.burst()実行
-- [ ] 11-C-3. update()でparticles.update()呼び出し
-- [ ] 11-C-4. draw()でparticles.draw()呼び出し
-- [ ] 11-C-5. FractalPlantViewにも統合
+## フェーズ16: 状態管理実装（v1.0核心機能）
+**目標:** Clear後に植物完成状態を維持、継続エフェクト
 
-### 11-D: コンクリートエフェクト統合
-- [ ] 11-D-1. PlantViewにConcreteEffectインスタンス追加
-- [ ] 11-D-2. draw()の最初でconcrete.drawBackground()
-- [ ] 11-D-3. Clear!時にconcrete.crack()実行
-- [ ] 11-D-4. draw()でconcrete.drawCracks()呼び出し
-- [ ] 11-D-5. 茎の基点をheight*0.7に調整
-- [ ] 11-D-6. FractalPlantViewにも統合
+### 16-A: 型定義・基盤
+- [ ] 16-A-1. types.tsに`PlantState = 'growing' | 'cleared'`追加
+- [ ] 16-A-2. IViewインターフェースに`setClearThreshold?(threshold: number)`追加
+- [ ] 16-A-3. PlantView.tsに`plantState`と`clearedHeight`プロパティ追加
+- [ ] 16-A-4. FractalPlantView.tsにも同様の追加
 
-### 11-E: 統合テスト
-- [ ] 11-E-1. PlantViewでClear!動作確認
-- [ ] 11-E-2. FractalPlantViewでClear!動作確認
-- [ ] 11-E-3. Easy Modeで両Viewテスト
-- [ ] 11-E-4. ビルド＆ブラウザテスト
+### 16-B: 状態遷移ロジック
+- [ ] 16-B-1. PlantView.update()を状態分岐に改修（`if (plantState === 'growing')`）
+- [ ] 16-B-2. `transitionToCleared()`メソッド実装（clearedHeight保存、状態変更）
+- [ ] 16-B-3. `updateClearedEffects()`メソッド実装（継続粒子生成、高さ固定）
+- [ ] 16-B-4. FractalPlantView.update()も同様に改修
+- [ ] 16-B-5. 型チェック確認（tsc --noEmit）
 
-## フェーズ15: 最終調整
-- [ ] 15-1. Simplexノイズで茎の揺らぎを追加
-- [ ] 15-2. 葉のサイズをvolume連動に変更
-- [ ] 15-3. 色の彩度・明度を調整
-- [ ] 15-4. レスポンシブ対応（windowResized）を確認
-- [ ] 15-5. 全体の動作を最終確認
+### 16-C: Clear後の継続エフェクト
+- [ ] 16-C-1. ParticleSystem.tsに`generateContinuous()`メソッド追加（1-2個/フレーム、上限20）
+- [ ] 16-C-2. PlantView.updateClearedEffects()で継続生成呼び出し
+- [ ] 16-C-3. 花びら降下の視覚確認（cleared状態で常時降下）
+- [ ] 16-C-4. FractalPlantViewにも統合
+
+### 16-D: テスト
+- [ ] 16-D-1. PlantViewで状態遷移確認（growing → cleared）
+- [ ] 16-D-2. cleared後に音量変化で高さが変わらないことを確認
+- [ ] 16-D-3. 継続粒子が20個上限で動作確認
+- [ ] 16-D-4. FractalPlantViewでも同様のテスト
+
+## フェーズ17: Clearライン調整UI
+**目標:** スライダーで目標値を0.5-1.0で調整可能
+
+### 17-A: ViewManager拡張
+- [ ] 17-A-1. ViewManager.tsに`setClearThreshold(threshold: number)`メソッド追加
+- [ ] 17-A-2. currentViewに対してsetClearThreshold呼び出し（オプショナルチェイン）
+- [ ] 17-A-3. View切替時にclearThreshold値を保持・引き継ぎ
+
+### 17-B: PlantView側の実装
+- [ ] 17-B-1. PlantView.tsに`setClearThreshold(threshold: number)`実装（0.5-1.0クランプ）
+- [ ] 17-B-2. 壁のY座標計算を`this.clearThreshold`ベースに変更
+- [ ] 17-B-3. FractalPlantView.tsにも実装
+- [ ] 17-B-4. ビルド確認
+
+### 17-C: HTML/CSS実装（仮配置）
+- [ ] 17-C-1. index.htmlに`<input type="range" id="clearSlider">`追加（min=0.5, max=1.0, step=0.05）
+- [ ] 17-C-2. `<span id="thresholdValue">`でリアルタイム表示
+- [ ] 17-C-3. 仮スタイリング（後でコンソールに移動）
+
+### 17-D: main.ts統合
+- [ ] 17-D-1. main.tsでclearSliderイベントリスナー設定
+- [ ] 17-D-2. スライダー変更時にviewManager.setClearThreshold()呼び出し
+- [ ] 17-D-3. thresholdValue更新（toFixed(2)）
+- [ ] 17-D-4. 動作確認（スライダー操作で壁が移動）
+
+## フェーズ18: コンソールUI実装
+**目標:** Canvas外に専用UIエリア、デバッグ情報・コントロール集約
+
+### 18-A: HTMLレイアウト変更
+- [ ] 18-A-1. index.htmlを`app-container > canvas-area + console-area`構造に変更
+- [ ] 18-A-2. canvas-areaに既存のCanvas要素移動
+- [ ] 18-A-3. console-areaに以下セクション追加：
+  - `console-header`（タイトル）
+  - `debug-info`（音量、周波数、高さ、Clear状態）
+  - `controls`（Viewボタン、Easy Mode、Clearスライダー）
+- [ ] 18-A-4. 既存UI要素（viewButtons, easyModeContainer等）をconsole-areaに移動
+
+### 18-B: CSS Grid/Flexboxレイアウト
+- [ ] 18-B-1. `.app-container { display: grid; grid-template-columns: 1fr 300px; }`
+- [ ] 18-B-2. モバイル対応（@media (max-width: 768px)で縦積み）
+- [ ] 18-B-3. canvas-areaを100%高さ、console-areaをスクロール可能に
+- [ ] 18-B-4. レイアウト動作確認（デスクトップ・モバイル）
+
+### 18-C: コンソールスタイリング（SF風）
+- [ ] 18-C-1. 背景: `rgba(0, 0, 30, 0.9)`（半透明ダークブルー）
+- [ ] 18-C-2. テキスト: `color: #00D9FF`（ネオン青）、フォント: Roboto Mono
+- [ ] 18-C-3. グローエフェクト: `text-shadow: 0 0 10px rgba(0, 217, 255, 0.8)`
+- [ ] 18-C-4. ボーダー: `border-left: 2px solid #00D9FF`
+- [ ] 18-C-5. スライダー・ボタンのカスタムスタイル（ネオン青アクセント）
+
+### 18-D: デバッグ情報DOM更新
+- [ ] 18-D-1. main.tsでDOM要素取得（volumeValue, freqValue, heightValue, clearStateValue）
+- [ ] 18-D-2. draw()内でDOM要素の`textContent`更新（60fps）
+- [ ] 18-D-3. PlantView/FractalPlantViewからCanvas描画のデバッグテキスト削除
+- [ ] 18-D-4. 動作確認（数値がリアルタイム更新）
+
+## フェーズ19: v1.0最終調整
+**目標:** 全機能統合、パフォーマンス最適化、UX改善
+
+### 19-A: パフォーマンス最適化
+- [ ] 19-A-1. Clear後粒子生成を軽量化（条件分岐で不要な計算削減）
+- [ ] 19-A-2. Simplexノイズの最適化確認（グローバルインスタンス再利用）
+- [ ] 19-A-3. Chrome DevToolsでフレームレート確認（60fps維持）
+
+### 19-B: UX改善
+- [ ] 19-B-1. Clearライン初期値0.8の妥当性確認（Easy Modeで0.5推奨？）
+- [ ] 19-B-2. Clear後メッセージの表示時間調整（2秒→3秒？）
+- [ ] 19-B-3. 継続粒子の色バリエーション確認（花色5種）
+- [ ] 19-B-4. コンソールUIの視認性確認（文字サイズ、コントラスト）
+
+### 19-C: 全モードテスト
+- [ ] 19-C-1. PlantView（通常）: 成長→Clear→cleared状態確認
+- [ ] 19-C-2. PlantView（Easy Mode）: 10倍増幅、Clear動作確認
+- [ ] 19-C-3. FractalPlantView（通常）: 累積成長→Clear→cleared状態確認
+- [ ] 19-C-4. FractalPlantView（Easy Mode）: 10倍増幅、Clear動作確認
+- [ ] 19-C-5. VisualizerView: 影響なし確認（Clear無関係）
+- [ ] 19-C-6. Clearスライダー: 0.5/0.7/1.0で動作確認
+
+### 19-D: レスポンシブ・互換性
+- [ ] 19-D-1. モバイルレイアウト確認（縦積み、タッチ操作）
+- [ ] 19-D-2. Safari互換性確認（AudioContext.suspended対応）
+- [ ] 19-D-3. 画面サイズ変更（windowResized）対応確認
+
+## フェーズ20: v1.0リリース準備
+- [ ] 20-1. README.md更新（v1.0新機能、使い方）
+- [ ] 20-2. ARCHITECTURE.md更新（v1.0設計図追記）
+- [ ] 20-3. vercel.json確認（デプロイ設定）
+- [ ] 20-4. ビルド最終確認（npm run build、エラーゼロ）
+- [ ] 20-5. Vercelデプロイ＆動作確認
+
+---
+
+## v1.0.5: Canvas 2D最適化（v1.0完成後、即時実装可）
+**目標:** 既存コードそのままで粒子数150→500個
+
+- [ ] 21-1. ParticleSystem.tsに`particleGraphic`プロパティ追加（p5.Graphics型）
+- [ ] 21-2. draw()内でcreateGraphics()による事前レンダリング実装
+- [ ] 21-3. circle()描画をimage()描画に置き換え
+- [ ] 21-4. グローエフェクト（2重円）を最適化版に移植
+- [ ] 21-5. バースト粒子数を150→300に増量テスト
+- [ ] 21-6. 継続粒子を20→50に増量テスト
+- [ ] 21-7. パフォーマンステスト（Chrome DevTools、60fps維持確認）
+- [ ] 21-8. 全View（Plant/Fractal）で動作確認
+
+**完了条件:** 粒子500個でも60fps安定維持
+
+---
+
+## v1.1: WebGL移行 + 3D演出（v1.0.5完成後）
+**目標:** GPU並列処理で粒子10000個、3D表現追加
+
+### Phase 1: WEBGL基盤（互換性保証）
+- [ ] 22-1. Git feature branchでWebGL実験開始
+- [ ] 22-2. main.tsで`p.createCanvas(800, 600, p.WEBGL)`に変更
+- [ ] 22-3. PlantView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
+- [ ] 22-4. FractalPlantView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
+- [ ] 22-5. VisualizerView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
+- [ ] 22-6. 基本動作確認（植物が表示されるか）
+- [ ] 22-7. 座標ズレ修正（必要に応じてutils.tsにtoWebGL()追加）
+- [ ] 22-8. 全Viewで描画位置が正しいことを確認
+
+### Phase 2: 粒子3D化
+- [ ] 22-9. ParticleSystem.draw()をWEBGL版に改修（translate+sphere）
+- [ ] 22-10. 粒子サイズ調整（circle→sphereで見た目維持）
+- [ ] 22-11. 粒子色・透明度が正しく表示されることを確認
+- [ ] 22-12. グローエフェクトをWEBGL版に移植（ambientLight使用）
+- [ ] 22-13. 粒子数を500→1000に増量テスト
+- [ ] 22-14. 粒子数を1000→5000に増量テスト
+- [ ] 22-15. 粒子数を5000→10000に増量テスト（限界値確認）
+
+### Phase 3: 3D演出追加
+- [ ] 22-16. directionalLight追加（ライティング基本）
+- [ ] 22-17. 粒子にrotateZ()追加（回転アニメーション）
+- [ ] 22-18. カメラワーク実験（zoom in/out）
+- [ ] 22-19. 3D植物の可能性検証（茎を円柱、葉を板ポリゴン）
+- [ ] 22-20. シェーダー実験（カスタムグロー）
+
+### Phase 4: 安定化・最適化
+- [ ] 22-21. ブラウザ互換性テスト（Chrome, Edge, Firefox, Safari）
+- [ ] 22-22. モバイル動作確認（Android Chrome, iOS Safari）
+- [ ] 22-23. WebGL非対応時のフォールバック実装（Canvas 2Dに自動切替）
+- [ ] 22-24. パフォーマンスプロファイリング（GPU使用率確認）
+- [ ] 22-25. ロールバックテスト（2行削除で元に戻ることを確認）
+- [ ] 22-26. v1.1リリース判断（問題なければmainマージ）
+
+**完了条件:** 粒子10000個で60fps維持、全ブラウザ動作
+
+---
+
+## v1.2: エフェクト強化（WebGLベース、v1.1完成後）
+- [ ] 23-1. 花びら形状（SVGパス → 3Dメッシュ）
+- [ ] 23-2. 光の粒子（星型パーティクル）
+- [ ] 23-3. コンクリートテクスチャ（Simplexノイズ）
+- [ ] 23-4. ひび割れアニメーション（徐々に拡大）
+- [ ] 23-5. 破片エフェクト（物理演算）
 
 ## 完了条件
 - [ ] マイク許可が正常に動作する

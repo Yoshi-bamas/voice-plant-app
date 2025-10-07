@@ -82,6 +82,18 @@ export class ViewManager {
     }
 
     /**
+     * v1.0: Clearライン目標値を一括設定
+     * @param threshold - 目標値（0.5-1.0）
+     */
+    setClearThreshold(threshold: number): void {
+        // PlantView系のみにsetClearThresholdを適用（VisualizerViewには不要）
+        this.plantView.setClearThreshold?.(threshold);
+        this.plantViewEasy.setClearThreshold?.(threshold);
+        this.fractalPlantView.setClearThreshold?.(threshold);
+        this.fractalPlantViewEasy.setClearThreshold?.(threshold);
+    }
+
+    /**
      * 現在のViewを更新
      */
     update(audioAnalyzer: AudioAnalyzer): void {

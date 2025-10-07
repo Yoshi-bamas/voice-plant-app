@@ -5,26 +5,40 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #1a1a1a;
+    font-family: 'Courier New', Courier, monospace;
+    background: #0a0a0a;
+    color: #00ff00;
     overflow: hidden;
 }
 
-.container {
-    position: relative;
+/* Grid Layout: Canvas + Console */
+.app-container {
+    display: grid;
+    grid-template-columns: 1fr 320px;
     width: 100vw;
     height: 100vh;
+    gap: 0;
+}
+
+/* Canvas Area */
+.canvas-area {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #1a1a1a;
+    border-right: 2px solid #00ff00;
 }
 
 #canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
+    display: block !important;
+    /* v1.0: 固定サイズで中央配置 */
+    width: 800px !important;
+    height: 600px !important;
+    margin: auto !important;
 }
 
+/* Start Button */
 .start-button {
     position: absolute;
     top: 50%;
@@ -33,128 +47,276 @@ body {
     padding: 20px 40px;
     font-size: 24px;
     font-weight: bold;
-    color: #fff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 50px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #0a0a0a;
+    background: #00ff00;
+    border: 3px solid #00ff00;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
     z-index: 10;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .start-button:hover {
-    transform: translate(-50%, -50%) scale(1.05);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: transparent;
+    color: #00ff00;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
 }
 
 .start-button:active {
-    transform: translate(-50%, -50%) scale(0.98);
+    transform: translate(-50%, -50%) scale(0.95);
 }
 
 .start-button--hidden {
     display: none;
 }
 
-.view-buttons {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    z-index: 10;
-}
-
-.view-buttons--hidden {
-    display: none;
-}
-
-.view-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-}
-
-.view-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-}
-
-.view-button--active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: transparent;
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
-}
-
-.easy-mode-container {
-    position: absolute;
-    top: 80px;
-    right: 20px;
-    z-index: 10;
-}
-
-.easy-mode-container--hidden {
-    display: none;
-}
-
-.easy-mode-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-}
-
-.easy-mode-label:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.easy-mode-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #667eea;
-}
-
+/* Clear Message */
 .clear-message {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 72px;
+    font-size: 96px;
     font-weight: bold;
-    color: #fff;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
-                 0 0 40px rgba(102, 126, 234, 0.6);
+    font-family: 'Courier New', Courier, monospace;
+    color: #00ff00;
+    text-shadow: 0 0 20px rgba(0, 255, 0, 0.8),
+                 0 0 40px rgba(0, 255, 0, 0.6),
+                 0 0 60px rgba(0, 255, 0, 0.4);
     opacity: 0;
     pointer-events: none;
     z-index: 20;
+    letter-spacing: 8px;
 }
 
+/* v1.0改: Clear後は常時表示（フェードインのみ） */
 .clear-message--visible {
-    animation: fadeInOut 2s ease-in-out;
+    animation: fadeIn 1s ease-in-out forwards;
 }
 
-@keyframes fadeInOut {
+/* 常時表示状態（cleared状態） */
+.clear-message--persistent {
+    opacity: 1;
+    animation: none;
+}
+
+@keyframes fadeIn {
     0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Console Area */
+.console-area {
+    background: #1a1a1a;  /* v1.0改: さらに明るく */
+    border-left: 2px solid #00ff00;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    /* v1.0: 全体的な明度向上 */
+    box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.15);
+    color: #00ff00;  /* テキスト色を明示的に指定 */
+}
+
+.console-area--hidden {
+    display: none;
+}
+
+/* Console Header */
+.console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #00ff00;
+    margin-bottom: 10px;
+}
+
+.console-title {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #00ff00;
+}
+
+.console-indicator {
+    width: 12px;
+    height: 12px;
+    background: #00ff00;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Console Section */
+.console-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* v1.0改: 背景をさらに明るく */
+    padding: 12px;
+    background: rgba(0, 255, 0, 0.08);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+}
+
+.console-label {
+    font-size: 12px;
+    color: #00ff00;
+    opacity: 1;  /* v1.0: 0.7 → 1 に変更 */
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+/* View Buttons */
+.view-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.view-button {
+    flex: 1;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    color: #00ff00;
+    background: transparent;
+    border: 2px solid #00ff00;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.view-button:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.view-button--active {
+    background: #00ff00;
+    color: #0a0a0a;
+}
+
+/* Console Option (Checkbox) */
+.console-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #00ff00;  /* テキスト色明示 */
+}
+
+.console-option:hover {
+    background: rgba(0, 255, 0, 0.15);
+}
+
+.console-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #00ff00;
+}
+
+/* Console Slider */
+.console-slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.console-slider-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00ff00;
+}
+
+.console-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(0, 255, 0, 0.3);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.console-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #00ff00;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+}
+
+.console-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #00ff00;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+}
+
+/* Console Data Display */
+.console-data {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.4);
+}
+
+.console-data-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #00ff00;  /* テキスト色明示 */
+}
+
+.console-data-item span:first-child {
+    opacity: 0.8;
+    color: #00ff00;
+}
+
+.console-data-item span:last-child {
+    font-weight: bold;
+    color: #00ff00;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+    }
+
+    .canvas-area {
+        border-right: none;
+        border-bottom: 2px solid #00ff00;
+    }
+
+    .console-area {
+        border-left: none;
+        border-top: 2px solid #00ff00;
+        max-height: 40vh;
+    }
 }
 
 @media (max-width: 768px) {
@@ -164,12 +326,11 @@ body {
     }
 
     .clear-message {
-        font-size: 48px;
+        font-size: 64px;
     }
-}
 
-@media (min-width: 320px) {
-    .container {
-        min-width: 320px;
+    .console-area {
+        padding: 15px;
+        gap: 15px;
     }
 }

@@ -4,25 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Plant App</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=1.1.1">
 </head>
 <body>
-    <div class="container" id="container">
-        <button id="startButton" class="start-button">Start</button>
-        <div id="viewButtons" class="view-buttons view-buttons--hidden">
-            <button id="plantButton" class="view-button view-button--active">Plant</button>
-            <button id="visualizerButton" class="view-button">Visualizer</button>
-            <button id="fractalButton" class="view-button">Fractal</button>
+    <div class="app-container">
+        <!-- Canvas Area -->
+        <div class="canvas-area" id="canvasArea">
+            <button id="startButton" class="start-button">Start</button>
+            <div id="clearMessage" class="clear-message">Clear!</div>
         </div>
-        <div id="easyModeContainer" class="easy-mode-container easy-mode-container--hidden">
-            <label class="easy-mode-label">
-                <input type="checkbox" id="easyModeToggle" class="easy-mode-checkbox">
-                <span>Easy Mode</span>
-            </label>
+
+        <!-- Console Area -->
+        <div class="console-area console-area--hidden" id="consoleArea">
+            <div class="console-header">
+                <span class="console-title">SYSTEM CONTROL</span>
+                <div class="console-indicator"></div>
+            </div>
+
+            <div class="console-section">
+                <div class="console-label">VIEW MODE</div>
+                <div class="view-buttons" id="viewButtons">
+                    <button id="plantButton" class="view-button view-button--active">Plant</button>
+                    <button id="visualizerButton" class="view-button">Visualizer</button>
+                    <button id="fractalButton" class="view-button">Fractal</button>
+                </div>
+            </div>
+
+            <div class="console-section">
+                <div class="console-label">OPTIONS</div>
+                <label class="console-option">
+                    <input type="checkbox" id="easyModeToggle" class="console-checkbox">
+                    <span>Easy Mode</span>
+                </label>
+            </div>
+
+            <div class="console-section">
+                <div class="console-label">CLEAR LINE</div>
+                <div class="console-slider-container">
+                    <span class="console-slider-value" id="clearThresholdValue">0.80</span>
+                    <input type="range" id="clearThresholdSlider" class="console-slider"
+                           min="50" max="100" value="80" step="5">
+                </div>
+            </div>
+
+            <div class="console-section">
+                <div class="console-label">AUDIO STATUS</div>
+                <div class="console-data">
+                    <div class="console-data-item">
+                        <span>Volume:</span>
+                        <span id="volumeValue">0.000</span>
+                    </div>
+                    <div class="console-data-item">
+                        <span>Frequency:</span>
+                        <span id="frequencyValue">0.000</span>
+                    </div>
+                    <div class="console-data-item">
+                        <span>State:</span>
+                        <span id="stateValue">growing</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="clearMessage" class="clear-message">Clear!</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <script type="module" src="dist/bundle.js"></script>
+    <script type="module" src="dist/bundle.js?v=1.1.1"></script>
 </body>
 </html>

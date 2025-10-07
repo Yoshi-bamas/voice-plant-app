@@ -56,28 +56,49 @@ export class ConcreteEffect {
     }
 
     /**
-     * ひび割れ線を生成（衝突位置から放射状）
+     * ひび割れ線を生成（衝突位置から放射状、枝分かれ付き）
      * @param impactX - 衝突X座標（省略時は画面中央）
      */
     private generateCrackLines(impactX?: number): void {
         this.crackLines = [];
         const centerX = impactX !== undefined ? impactX : 0.5;  // 画面幅比率（0-1）
 
-        // 衝突点から放射状に8本のひび割れ
-        for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;  // 360度を8分割
-            const length = 0.05 + Math.random() * 0.1;  // 5-15%の長さ
+        // 衝突点から放射状に12本のひび割れ（強化: 8→12）
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;  // 360度を12分割
+            const length = 0.08 + Math.random() * 0.15;  // 8-23%の長さ（強化: 5-15%→8-23%）
 
             // ひび割れの終点を計算
             const dx = Math.cos(angle) * length;
             const dy = Math.sin(angle) * length;
 
+            // メインひび割れ
             this.crackLines.push({
                 x1: centerX,
                 y1: 0,  // 壁の中心からの相対位置（drawCracksで調整）
                 x2: centerX + dx,
                 y2: dy
             });
+
+            // 枝分かれひび割れ（50%の確率）
+            if (Math.random() > 0.5) {
+                const branchAngle = angle + (Math.random() - 0.5) * Math.PI / 3;  // ±30度
+                const branchLength = length * (0.4 + Math.random() * 0.3);  // 40-70%の長さ
+                const branchStartRatio = 0.5 + Math.random() * 0.3;  // 50-80%地点から分岐
+
+                const branchStartX = centerX + dx * branchStartRatio;
+                const branchStartY = dy * branchStartRatio;
+
+                const branchDx = Math.cos(branchAngle) * branchLength;
+                const branchDy = Math.sin(branchAngle) * branchLength;
+
+                this.crackLines.push({
+                    x1: branchStartX,
+                    y1: branchStartY,
+                    x2: branchStartX + branchDx,
+                    y2: branchStartY + branchDy
+                });
+            }
         }
     }
 
@@ -93,22 +114,32 @@ export class ConcreteEffect {
     }
 
     /**
-     * ひび割れ線を描画
+     * ひび割れ線を描画（太さのバリエーション付き）
      * @param p - p5インスタンス
      */
     drawCracks(p: p5): void {
         if (this.crackProgress <= 0.01) return;
 
         const alpha = this.crackProgress * 255;
-        p.stroke(0, 0, 0, alpha);  // 黒、透明度付き
-        p.strokeWeight(4);
 
-        this.crackLines.forEach(line => {
+        this.crackLines.forEach((line, index) => {
             const x1 = line.x1 * p.width;
             const y1 = this.lastWallY + line.y1 * p.height;  // 壁のY座標を基準に
             const x2 = line.x2 * p.width;
             const y2 = this.lastWallY + line.y2 * p.height;
+
+            // メインひび割れ（偶数番号）は太く、枝（奇数番号）は細く
+            const weight = index % 2 === 0 ? 5 : 3;
+
+            // 黒のひび割れ（メイン）
+            p.stroke(0, 0, 0, alpha);
+            p.strokeWeight(weight);
             p.line(x1, y1, x2, y2);
+
+            // 白いハイライト（ひび割れの内側、立体感）
+            p.stroke(255, 255, 255, alpha * 0.4);
+            p.strokeWeight(weight * 0.4);
+            p.line(x1 + 1, y1 + 1, x2 + 1, y2 + 1);
         });
     }
 

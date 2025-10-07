@@ -1,20 +1,26 @@
 import p5 from 'p5';
 import { AudioAnalyzer } from './audio';
-import { IView } from './types';
+import { IView, PlantState } from './types';
 import { drawStem } from './animation';
 import { ParticleSystem } from './effects/ParticleSystem';
 import { ConcreteEffect } from './effects/ConcreteEffect';
 
 /**
- * 植物ビュークラス
+ * 植物ビュークラス（v1.0状態管理版）
  * 音量で茎が伸び、周波数で葉が分岐する植物を描画
  * Clear!エフェクト（粒子・コンクリート）統合
+ * v1.0: Clear後は完成状態を維持、継続エフェクト表示
  */
 export class PlantView implements IView {
     private volume: number = 0;
     private frequency: number = 0;
     private smoothedVolume: number = 0;
     private readonly smoothingFactor: number = 0.3;
+
+    // v1.0: 状態管理
+    private plantState: PlantState = 'growing';
+    private clearedHeight: number = 0;  // Clear時の高さを保存
+    protected clearThreshold: number = 0.8;  // Clearライン目標値（スライダーで変更可）
 
     // Clear!エフェクト
     private particles: ParticleSystem;
@@ -34,16 +40,73 @@ export class PlantView implements IView {
         // 音量をスムージング
         this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + this.volume * this.smoothingFactor;
 
-        // Clear!判定（音量0.8以上）は draw() で実行（壁の位置計算後）
+        // v1.0: 状態別の処理
+        if (this.plantState === 'growing') {
+            // growing状態: 通常の成長処理
+            // Clear!判定はdraw()で実行（壁の位置計算後）
 
-        // Clear!終了判定（音量が下がったらリセット）
-        if (this.smoothedVolume < 0.5 && this.clearTriggered) {
-            this.clearTriggered = false;
+            // Clear!リトライ判定（音量が下がったら再挑戦可能）
+            if (this.smoothedVolume < 0.3 && this.clearTriggered) {
+                this.clearTriggered = false;
+            }
+        } else {
+            // cleared状態: 高さ固定、継続エフェクトのみ
+            this.updateClearedEffects();
         }
 
-        // エフェクト更新
+        // エフェクト更新（共通）
         this.particles.update();
         this.concrete.update();
+    }
+
+    /**
+     * v1.0改: Clear後の継続エフェクト更新
+     */
+    private updateClearedEffects(): void {
+        // 花びら降下（画面上部から常時、30粒子上限）
+        this.particles.generateFloatingPetals(800, 30);  // Canvas幅800px想定
+
+        // キラキラエフェクト（ランダム位置、15粒子上限）
+        this.particles.generateSparkles(800, 600, 15);  // Canvas 800x600想定
+    }
+
+    /**
+     * v1.0: cleared状態への遷移
+     */
+    private transitionToCleared(): void {
+        this.plantState = 'cleared';
+        this.clearedHeight = this.smoothedVolume * 400;  // 現在の高さを保存
+        this.clearTriggered = true;
+        this.triggerClear(this.calculateWallY(), this.calculateImpactX());
+    }
+
+    /**
+     * v1.0: 壁のY座標を計算（ヘルパーメソッド）
+     */
+    private calculateWallY(): number {
+        const baseY = this.getBaseY();
+        return baseY - (this.clearThreshold * 400);
+    }
+
+    /**
+     * v1.0: 衝突X座標を計算（ヘルパーメソッド）
+     */
+    private calculateImpactX(): number {
+        return 400;  // 画面中央（仮、p5インスタンスがないため固定値）
+    }
+
+    /**
+     * v1.0: 基点Y座標を取得
+     */
+    private getBaseY(): number {
+        return 540;  // height * 0.9（仮、p5インスタンスがないため固定値）
+    }
+
+    /**
+     * v1.0: Clearライン目標値を設定（スライダー連携）
+     */
+    setClearThreshold(threshold: number): void {
+        this.clearThreshold = Math.max(0.5, Math.min(1.0, threshold));
     }
 
     /**
@@ -65,60 +128,33 @@ export class PlantView implements IView {
     }
 
     /**
-     * DOM操作: Clear!メッセージを表示
+     * v1.0改: Clear!メッセージを常時表示（cleared状態の間）
      */
     private showClearMessage(): void {
         const msg = document.getElementById('clearMessage');
         if (msg) {
             msg.classList.add('clear-message--visible');
-            setTimeout(() => {
-                msg.classList.remove('clear-message--visible');
-            }, 2000);
+            msg.classList.add('clear-message--persistent');  // 常時表示クラス追加
         }
     }
 
     draw(p: p5): void {
-        // Clear!ライン（壁）の位置を計算
+        // v1.1.1: Clear!ライン（壁）の位置を計算（clearThresholdに連動）
         const baseY = p.height * 0.9;
-        const clearLineY = baseY - (0.8 * 400); // 0.8 * 400px = 320px
+        const clearLineY = baseY - (this.clearThreshold * 400);
         const wallY = clearLineY;
 
         // コンクリート壁を描画（赤ライン位置に横向き）
         this.concrete.drawWall(p, wallY, 60, [120, 120, 120], 0.9);
 
-        // デバッグ用: 赤いライン（壁の中心線）
-        p.stroke(255, 0, 0, 150);
-        p.strokeWeight(2);
-        p.line(0, clearLineY, p.width, clearLineY);
-
-        // デバッグ表示: 音量と周波数と高さ
-        p.fill(255, 0, 0);
-        p.textSize(32);
-        p.text(`Volume: ${this.smoothedVolume.toFixed(3)}`, 10, 40);
-
-        p.fill(255, 255, 0);
-        p.textSize(32);
-        p.text(`Freq: ${this.frequency.toFixed(3)}`, 10, 80);
-
-        // 茎の高さ表示
-        const stemHeight = p.map(this.smoothedVolume, 0, 1, 0, 400);
-        p.fill(0, 255, 0);
-        p.textSize(32);
-        p.text(`Height: ${stemHeight.toFixed(0)}px`, 10, 120);
-
-        // Clear!状態表示
-        p.fill(255, 255, 255);
-        p.textSize(32);
-        p.text(`Clear: ${this.clearTriggered ? 'YES' : 'NO'}`, 10, 160);
-
-        // Clear!判定（音量0.8以上、壁の位置を渡す）
-        if (this.smoothedVolume > 0.8 && !this.clearTriggered) {
-            const impactX = p.width / 2;  // 画面中央
-            this.triggerClear(wallY, impactX);
+        // v1.0: Clear!判定（clearThreshold以上、壁の位置を渡す）
+        if (this.smoothedVolume > this.clearThreshold && !this.clearTriggered && this.plantState === 'growing') {
+            this.transitionToCleared();
         }
 
-        // 茎を描画（地面上部から）
-        drawStem(p, this.smoothedVolume, this.frequency);
+        // 茎を描画（v1.0: cleared状態では固定高さ使用）
+        const displayVolume = this.plantState === 'cleared' ? this.clearedHeight / 400 : this.smoothedVolume;
+        drawStem(p, displayVolume, this.frequency);
 
         // コンクリートひび割れを描画
         this.concrete.drawCracks(p);

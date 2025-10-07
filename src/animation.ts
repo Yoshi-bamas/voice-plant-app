@@ -1,5 +1,9 @@
 import p5 from 'p5';
 import { hslToRgb } from './utils';
+import { createNoise2D } from 'simplex-noise';
+
+// Simplexノイズ生成器（グローバル）
+const noise2D = createNoise2D();
 
 /**
  * 葉を描画する関数（ベジェ曲線で描画）
@@ -40,14 +44,13 @@ function drawLeaf(p: p5, x: number, y: number, size: number, angle: number, r: n
 }
 
 /**
- * 茎を描画する関数
+ * 茎を描画する関数（Simplexノイズで揺らぎ付き）
  * @param p - p5インスタンス
  * @param volume - 音量値（0-1）
  * @param frequency - 周波数平均値（0-1）
  */
 export function drawStem(p: p5, volume: number, frequency: number): void {
     // 周波数(0-1)をhue(120-0)に変換（低い声→緑120°、高い声→赤0°）
-    // 注意: 低い声で120、高い声で0にするため、反転させる
     const hue = p.map(frequency, 0, 1, 120, 0);
 
     // HSLをRGBに変換（彩度100%、明度50%）
@@ -55,7 +58,6 @@ export function drawStem(p: p5, volume: number, frequency: number): void {
 
     // 茎の色を設定（アナログに滑らかに変化）
     p.stroke(r, g, b);
-    // 茎の太さを8pxに設定
     p.strokeWeight(8);
 
     // 画面下部中央(width/2, height*0.9)から垂直に線を描画
@@ -65,15 +67,46 @@ export function drawStem(p: p5, volume: number, frequency: number): void {
     // 音量(0-1)を茎の高さ(0-400px)に変換
     const stemHeight = p.map(volume, 0, 1, 0, 400);
 
-    // 垂直に線を描画（下から上へ）
-    p.line(baseX, baseY, baseX, baseY - stemHeight);
+    // Simplexノイズで茎の揺らぎを計算（時間ベース）
+    const time = p.millis() / 1000; // 秒単位
+    const noiseScale = 0.3; // ノイズの周波数
+    const swayAmplitude = 15; // 揺れ幅（±15px）
 
-    // 茎の中間地点に葉を1枚描画
-    if (stemHeight > 50) { // 茎がある程度伸びたら葉を表示
-        const leafY = baseY - stemHeight / 2; // 中間地点
-        const leafSize = 30; // 葉のサイズを30pxに固定
-        const leafAngle = -30; // 左側に30度傾ける
+    // ベジェ曲線で滑らかな茎を描画（揺らぎ付き）
+    p.noFill();
+    p.beginShape();
+    p.vertex(baseX, baseY); // 基点
 
-        drawLeaf(p, baseX, leafY, leafSize, leafAngle, r, g, b);
+    // 茎を複数セグメントに分けて描画（10セグメント）
+    const segments = 10;
+    for (let i = 1; i <= segments; i++) {
+        const ratio = i / segments;
+        const y = baseY - stemHeight * ratio;
+
+        // ノイズで横方向の揺れを計算（高さに応じて揺れ幅増加）
+        const noiseValue = noise2D(time * noiseScale, ratio * 2);
+        const swayX = baseX + noiseValue * swayAmplitude * ratio;
+
+        p.vertex(swayX, y);
+    }
+    p.endShape();
+
+    // 茎の先端の座標を計算（葉の描画用）
+    const topNoiseValue = noise2D(time * noiseScale, 2);
+    const topX = baseX + topNoiseValue * swayAmplitude;
+    const topY = baseY - stemHeight;
+
+    // 茎の中間地点に葉を1枚描画（揺らぎに追従）
+    if (stemHeight > 50) {
+        const leafRatio = 0.5; // 中間地点
+        const leafNoiseValue = noise2D(time * noiseScale, leafRatio * 2);
+        const leafX = baseX + leafNoiseValue * swayAmplitude * leafRatio;
+        const leafY = baseY - stemHeight * leafRatio;
+        const leafSize = 30;
+
+        // 葉の角度をノイズで動的に変化（-45° ~ -15°）
+        const leafAngle = -30 + noise2D(time * noiseScale * 0.5, 10) * 15;
+
+        drawLeaf(p, leafX, leafY, leafSize, leafAngle, r, g, b);
     }
 }

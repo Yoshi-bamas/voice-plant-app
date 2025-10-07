@@ -1,15 +1,16 @@
 import p5 from 'p5';
 import { AudioAnalyzer } from '../../audio';
-import { IView } from '../../types';
+import { IView, PlantState } from '../../types';
 import { hslToRgb } from '../../utils';
 import { drawGrowingTree } from './fractalAlgorithms';
 import { ParticleSystem } from '../../effects/ParticleSystem';
 import { ConcreteEffect } from '../../effects/ConcreteEffect';
 
 /**
- * フラクタル植物ビュークラス（実験的）
+ * フラクタル植物ビュークラス（実験的、v1.0状態管理版）
  * 音量で根元から成長する対生の樹木
  * Clear!エフェクト統合
+ * v1.0: Clear後は完成状態を維持、継続エフェクト表示
  */
 export class FractalPlantView implements IView {
     private volume: number = 0;
@@ -23,6 +24,11 @@ export class FractalPlantView implements IView {
     private accumulatedHeight: number = 0;
     private readonly growthSpeed: number = 3; // 成長速度
     private readonly decayRate: number = 0.98; // 減衰率
+
+    // v1.0: 状態管理
+    private plantState: PlantState = 'growing';
+    private clearedAccumulatedHeight: number = 0;  // Clear時の累積高さを保存
+    protected clearThreshold: number = 0.8;  // Clearライン目標値（スライダーで変更可）
 
     // Clear!エフェクト
     private particles: ParticleSystem;
@@ -45,25 +51,74 @@ export class FractalPlantView implements IView {
         // 音量をスムージング
         this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + this.volume * this.smoothingFactor;
 
-        // 音量累積で幹が成長（最大400px）
-        this.accumulatedHeight += this.smoothedVolume * this.growthSpeed;
-        this.accumulatedHeight = Math.min(this.accumulatedHeight, 400);
+        // v1.0: 状態別の処理
+        if (this.plantState === 'growing') {
+            // growing状態: 通常の成長処理
+            // 音量累積で幹が成長（最大400px）
+            this.accumulatedHeight += this.smoothedVolume * this.growthSpeed;
+            this.accumulatedHeight = Math.min(this.accumulatedHeight, 400);
 
-        // 静かになると少しずつ減衰
-        if (this.smoothedVolume < 0.1) {
-            this.accumulatedHeight *= this.decayRate;
+            // 静かになると少しずつ減衰
+            if (this.smoothedVolume < 0.1) {
+                this.accumulatedHeight *= this.decayRate;
+            }
+
+            // Clear!リトライ判定（音量が下がったら再挑戦可能）
+            if (this.smoothedVolume < 0.3 && this.clearTriggered) {
+                this.clearTriggered = false;
+            }
+        } else {
+            // cleared状態: 累積高さ固定、継続エフェクトのみ
+            this.accumulatedHeight = this.clearedAccumulatedHeight;
+            this.updateClearedEffects();
         }
 
-        // Clear!判定（音量0.8以上）は draw() で実行（壁の位置計算後）
-
-        // Clear!終了判定（音量が下がったらリセット）
-        if (this.smoothedVolume < 0.5 && this.clearTriggered) {
-            this.clearTriggered = false;
-        }
-
-        // エフェクト更新
+        // エフェクト更新（共通）
         this.particles.update();
         this.concrete.update();
+    }
+
+    /**
+     * v1.0改: Clear後の継続エフェクト更新
+     */
+    private updateClearedEffects(): void {
+        // 花びら降下（画面上部から常時、30粒子上限）
+        this.particles.generateFloatingPetals(800, 30);  // Canvas幅800px想定
+
+        // キラキラエフェクト（ランダム位置、15粒子上限）
+        this.particles.generateSparkles(800, 600, 15);  // Canvas 800x600想定
+    }
+
+    /**
+     * v1.0: cleared状態への遷移
+     */
+    private transitionToCleared(): void {
+        this.plantState = 'cleared';
+        this.clearedAccumulatedHeight = this.accumulatedHeight;  // 現在の累積高さを保存
+        this.clearTriggered = true;
+        this.triggerClear(this.calculateWallY(), this.calculateImpactX());
+    }
+
+    /**
+     * v1.0: 壁のY座標を計算
+     */
+    private calculateWallY(): number {
+        const baseY = this.concrete.getGroundY({ height: 600 } as p5);  // 仮のp5インスタンス
+        return baseY - (this.clearThreshold * 400);
+    }
+
+    /**
+     * v1.0: 衝突X座標を計算
+     */
+    private calculateImpactX(): number {
+        return 400;  // 画面中央（仮）
+    }
+
+    /**
+     * v1.0: Clearライン目標値を設定（スライダー連携）
+     */
+    setClearThreshold(threshold: number): void {
+        this.clearThreshold = Math.max(0.5, Math.min(1.0, threshold));
     }
 
     /**
@@ -85,44 +140,28 @@ export class FractalPlantView implements IView {
     }
 
     /**
-     * DOM操作: Clear!メッセージを表示
+     * v1.0改: Clear!メッセージを常時表示（cleared状態の間）
      */
     private showClearMessage(): void {
         const msg = document.getElementById('clearMessage');
         if (msg) {
             msg.classList.add('clear-message--visible');
-            setTimeout(() => {
-                msg.classList.remove('clear-message--visible');
-            }, 2000);
+            msg.classList.add('clear-message--persistent');  // 常時表示クラス追加
         }
     }
 
     draw(p: p5): void {
-        // Clear!ライン（壁）の位置を計算
+        // v1.1.1: Clear!ライン（壁）の位置を計算（clearThresholdに連動）
         const baseY = this.concrete.getGroundY(p);
-        const clearLineY = baseY - (0.8 * 400); // 0.8相当の高さ = 320px
+        const clearLineY = baseY - (this.clearThreshold * 400);
         const wallY = clearLineY;
 
         // コンクリート壁を描画（赤ライン位置に横向き）
         this.concrete.drawWall(p, wallY, 60, [120, 120, 120], 0.9);
 
-        // デバッグ用: 赤いライン（壁の中心線）
-        p.stroke(255, 0, 0, 150);
-        p.strokeWeight(2);
-        p.line(0, clearLineY, p.width, clearLineY);
-
-        // デバッグ表示（強化版）
-        p.fill(255, 255, 255, 200);
-        p.textSize(20);
-        p.text('Fractal Plant (Experimental)', 10, 25);
-        p.text(`Height: ${this.accumulatedHeight.toFixed(0)}px`, 10, 55);
-        p.text(`Volume: ${this.smoothedVolume.toFixed(3)}`, 10, 85);
-        p.text(`Clear: ${this.clearTriggered ? 'YES' : 'NO'}`, 10, 115);
-
-        // Clear!判定（音量0.8以上、壁の位置を渡す）
-        if (this.smoothedVolume > 0.8 && !this.clearTriggered) {
-            const impactX = p.width / 2;  // 画面中央
-            this.triggerClear(wallY, impactX);
+        // v1.1.1: Clear!判定（accumulatedHeightベース、壁の位置に到達で判定）
+        if (this.accumulatedHeight >= (this.clearThreshold * 400) && !this.clearTriggered && this.plantState === 'growing') {
+            this.transitionToCleared();
         }
 
         // 音声パラメータをフラクタルパラメータにマッピング

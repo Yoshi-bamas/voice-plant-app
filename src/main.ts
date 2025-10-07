@@ -9,16 +9,25 @@ let isStarted = false;
 const sketch = (p: p5) => {
     p.setup = () => {
         const canvas = p.createCanvas(800, 600);
-        canvas.parent('container');
+        canvas.parent('canvasArea');
         canvas.id('canvas');
+
+        // v1.1.1: インラインstyleで強制設定（CSSの!importantが効かないため）
+        const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
+        if (canvasElement) {
+            canvasElement.style.width = '800px';
+            canvasElement.style.height = '600px';
+            canvasElement.style.display = 'block';
+        }
 
         // ViewManagerを初期化
         viewManager = new ViewManager();
 
         const startButton = document.getElementById('startButton');
-        const viewButtons = document.getElementById('viewButtons');
-        const easyModeContainer = document.getElementById('easyModeContainer');
+        const consoleArea = document.getElementById('consoleArea');
         const easyModeToggle = document.getElementById('easyModeToggle') as HTMLInputElement;
+        const clearThresholdSlider = document.getElementById('clearThresholdSlider') as HTMLInputElement;
+        const clearThresholdValue = document.getElementById('clearThresholdValue');
         const plantButton = document.getElementById('plantButton');
         const visualizerButton = document.getElementById('visualizerButton');
         const fractalButton = document.getElementById('fractalButton');
@@ -31,12 +40,9 @@ const sketch = (p: p5) => {
                     isStarted = true;
                     startButton.classList.add('start-button--hidden');
 
-                    // View切り替えボタンとEasy Modeトグルを表示
-                    if (viewButtons) {
-                        viewButtons.classList.remove('view-buttons--hidden');
-                    }
-                    if (easyModeContainer) {
-                        easyModeContainer.classList.remove('easy-mode-container--hidden');
+                    // コンソールエリアを表示
+                    if (consoleArea) {
+                        consoleArea.classList.remove('console-area--hidden');
                     }
                 } catch (error) {
                     console.error('マイク初期化エラー:', error);
@@ -89,6 +95,17 @@ const sketch = (p: p5) => {
                 }
             });
         }
+
+        // v1.0: Clearラインスライダー
+        if (clearThresholdSlider && clearThresholdValue) {
+            clearThresholdSlider.addEventListener('input', () => {
+                const value = parseInt(clearThresholdSlider.value) / 100; // 50-100 → 0.5-1.0
+                clearThresholdValue.textContent = value.toFixed(2);
+                if (viewManager) {
+                    viewManager.setClearThreshold(value);
+                }
+            });
+        }
     };
 
     p.draw = () => {
@@ -101,7 +118,27 @@ const sketch = (p: p5) => {
         // ViewManagerを更新・描画
         viewManager.update(audioAnalyzer);
         viewManager.draw(p);
+
+        // v1.0: コンソールにリアルタイム情報表示
+        updateConsoleData(audioAnalyzer);
     };
 };
+
+/**
+ * v1.0: コンソールにリアルタイム情報を更新
+ */
+function updateConsoleData(audioAnalyzer: AudioAnalyzer): void {
+    const volumeValue = document.getElementById('volumeValue');
+    const frequencyValue = document.getElementById('frequencyValue');
+
+    if (volumeValue) {
+        volumeValue.textContent = audioAnalyzer.getVolume().toFixed(3);
+    }
+
+    if (frequencyValue) {
+        const freq = audioAnalyzer.getFrequency();
+        frequencyValue.textContent = freq.average.toFixed(3);
+    }
+}
 
 new p5(sketch);
