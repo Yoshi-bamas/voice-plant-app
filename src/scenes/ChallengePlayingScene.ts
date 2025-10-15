@@ -90,10 +90,12 @@ export class ChallengePlayingScene implements IScene {
 
         if (plantState === 'cleared') {
             // Clear達成 → ResultScene
+            console.log('[ChallengePlayingScene] Plant cleared! Transitioning to result...');
             this.resultScene.setResult('clear');
             this.sceneManager.switchTo('result');
         } else if (plantState === 'gameOver') {
             // GameOver → ResultScene
+            console.log('[ChallengePlayingScene] GameOver detected. Transitioning to result...');
             this.resultScene.setResult('gameover');
             this.sceneManager.switchTo('result');
         }
@@ -106,5 +108,13 @@ export class ChallengePlayingScene implements IScene {
         // ChallengeModeView描画（Plant中央 + Visualizer×2）
         // Note: ChallengeModeViewは内部でWEBGL座標系（中央原点）を使用
         this.challengeModeView.draw(p);
+    }
+
+    /**
+     * v1.5.7: マイク感度（音量閾値）を設定
+     * @param threshold - 音量閾値（0.03-0.20）
+     */
+    setVolumeThreshold(threshold: number): void {
+        this.challengeModeView.setVolumeThreshold(threshold);
     }
 }

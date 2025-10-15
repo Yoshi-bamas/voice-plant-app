@@ -14,7 +14,7 @@ import { SceneManager } from './SceneManager';
 
 export class CountdownScene implements IScene {
     private sceneManager: SceneManager;
-    private countdown: number = 3;
+    private countdown: number = 5;  // v1.5.7: 5秒カウントダウンに変更
     private frameCounter: number = 0;
     private readonly framesPerCount: number = 60;  // 1秒 = 60フレーム
     private alpha: number = 0;  // フェードイン用
@@ -28,7 +28,7 @@ export class CountdownScene implements IScene {
      */
     onEnter(): void {
         console.log('[CountdownScene] Enter');
-        this.countdown = 3;
+        this.countdown = 5;  // v1.5.7: 5秒から開始
         this.frameCounter = 0;
         this.alpha = 0;
 

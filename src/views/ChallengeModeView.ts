@@ -36,6 +36,7 @@ export class ChallengeModeView implements IView {
 
     /**
      * フレーム毎の更新処理（Playing時）
+     * v1.5.7: 処理順序を明確化（PlantView更新 → 状態チェック → GameOver判定）
      */
     update(audioAnalyzer: AudioAnalyzer): void {
         const volume = audioAnalyzer.getVolume();
@@ -43,21 +44,24 @@ export class ChallengeModeView implements IView {
         // Voice continuity検出
         this.voiceContinuityDetector.update(volume);
 
-        // v1.5.5: 状態メッセージ更新
-        this.updateStatusMessage();
+        // v1.5.7: PlantView更新（Clear判定はここで実行される）
+        this.plantView.update(audioAnalyzer);
+        this.visualizerLeft.update(audioAnalyzer);
+        this.visualizerRight.update(audioAnalyzer);
+
+        // v1.5.7: 状態チェック（Clear成功時はGameOver判定をスキップ）
+        const plantState = this.plantView.getPlantState();
+        console.log(`[ChallengeModeView] State after update: ${plantState}, VoiceLost: ${this.voiceContinuityDetector.isVoiceLost()}`);
 
         // growing状態のみ途切れ検出
-        const plantState = this.plantView.getPlantState();
         if (plantState === 'growing' && this.voiceContinuityDetector.isVoiceLost()) {
             console.log('[ChallengeModeView] Voice lost! Resetting plant...');
             this.plantView.resetPlantHeight();
             this.plantView.transitionToGameOver();
         }
 
-        // 全View更新
-        this.plantView.update(audioAnalyzer);
-        this.visualizerLeft.update(audioAnalyzer);
-        this.visualizerRight.update(audioAnalyzer);
+        // v1.5.5: 状態メッセージ更新
+        this.updateStatusMessage();
     }
 
     /**
@@ -221,5 +225,20 @@ export class ChallengeModeView implements IView {
      */
     isResetComplete(): boolean {
         return this.plantView.isResetComplete();
+    }
+
+    /**
+     * v1.5.7: マイク感度（音量閾値）を設定
+     * PlantViewとVoiceContinuityDetectorの両方に適用
+     * @param threshold - 音量閾値（0.03-0.20）
+     */
+    setVolumeThreshold(threshold: number): void {
+        // PlantViewの成長閾値を更新
+        if (typeof (this.plantView as any).setVolumeThreshold === 'function') {
+            (this.plantView as any).setVolumeThreshold(threshold);
+        }
+
+        // VoiceContinuityDetectorの閾値も更新
+        this.voiceContinuityDetector.setVolumeThreshold(threshold);
     }
 }

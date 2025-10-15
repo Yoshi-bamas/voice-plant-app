@@ -92,6 +92,8 @@ const sketch = (p: p5) => {
         const easyModeToggle = document.getElementById('easyModeToggle') as HTMLInputElement;
         const clearThresholdSlider = document.getElementById('clearThresholdSlider') as HTMLInputElement;
         const clearThresholdValue = document.getElementById('clearThresholdValue');
+        const sensitivitySlider = document.getElementById('sensitivitySlider') as HTMLInputElement;
+        const sensitivityValue = document.getElementById('sensitivityValue');
         const plantButton = document.getElementById('plantButton');
         const visualizerButton = document.getElementById('visualizerButton');
         const fractalButton = document.getElementById('fractalButton');
@@ -166,6 +168,29 @@ const sketch = (p: p5) => {
                 clearThresholdValue.textContent = value.toFixed(2);
                 if (viewManager) {
                     viewManager.setClearThreshold(value);
+                }
+            });
+        }
+
+        // v1.5.7: マイク感度スライダー（対数スケール）
+        if (sensitivitySlider && sensitivityValue) {
+            sensitivitySlider.addEventListener('input', () => {
+                const sliderValue = parseInt(sensitivitySlider.value); // 0-100
+
+                // 対数スケール変換: 0-100 → 0.001-0.20
+                // log10(0.001) = -3, log10(0.20) = -0.699
+                // 線形補間: y = 10^(a + (b-a) * x/100)
+                const minLog = Math.log10(0.001);  // -3
+                const maxLog = Math.log10(0.20);   // -0.699
+                const logValue = minLog + (maxLog - minLog) * (sliderValue / 100);
+                const value = Math.pow(10, logValue);
+
+                sensitivityValue.textContent = value.toFixed(3);
+                if (viewManager) {
+                    viewManager.setVolumeThreshold(value);
+                }
+                if (challengePlayingScene) {
+                    challengePlayingScene.setVolumeThreshold(value);
                 }
             });
         }

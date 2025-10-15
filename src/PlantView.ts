@@ -7,6 +7,7 @@ import { ConcreteEffect } from './effects/ConcreteEffect';
 
 /**
  * 植物ビュークラス（v1.0状態管理版）
+ * v1.5.7改: 持続時間ベース成長システム統合
  * 音量で茎が伸び、周波数で葉が分岐する植物を描画
  * Clear!エフェクト（粒子・コンクリート）統合
  * v1.0: Clear後は完成状態を維持、継続エフェクト表示
@@ -16,6 +17,11 @@ export class PlantView implements IView {
     private frequency: number = 0;
     private smoothedVolume: number = 0;
     private readonly smoothingFactor: number = 0.3;
+
+    // v1.5.7: 持続時間ベース成長
+    private accumulatedHeight: number = 0;  // 累積成長高さ（0-400px）
+    private readonly growthRate: number = 0.8;  // 1フレームあたりの成長量（400px到達まで約8秒）
+    private volumeThreshold: number = 0.008;  // v1.5.7: 成長開始閾値（デフォルト0.008、対数スケール0.001-0.20）
 
     // v1.0: 状態管理
     private plantState: PlantState = 'growing';
@@ -37,16 +43,27 @@ export class PlantView implements IView {
         const frequencyData = audioAnalyzer.getFrequency();
         this.frequency = frequencyData.average;
 
-        // 音量をスムージング
+        // 音量をスムージング（表示用、揺れ演出で使用）
         this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + this.volume * this.smoothingFactor;
 
-        // v1.0: 状態別の処理
+        // v1.5.7: 持続時間ベース成長処理
         if (this.plantState === 'growing') {
-            // growing状態: 通常の成長処理
-            // Clear!判定はdraw()で実行（壁の位置計算後）
+            // 閾値以上の音量を維持している時間で成長
+            if (this.volume >= this.volumeThreshold) {
+                this.accumulatedHeight += this.growthRate;
+                // 最大高さ400pxでクランプ
+                this.accumulatedHeight = Math.min(this.accumulatedHeight, 400);
+            }
+            // 閾値未満の場合は成長停止（高さは維持）
 
-            // Clear!リトライ判定（音量が下がったら再挑戦可能）
-            if (this.smoothedVolume < 0.3 && this.clearTriggered) {
+            // v1.5.7: Clear!判定（update内で実行、draw内での判定を廃止）
+            if (this.accumulatedHeight >= this.clearThreshold * 400 && !this.clearTriggered) {
+                console.log(`[PlantView] Clear threshold reached! Height: ${this.accumulatedHeight}, Threshold: ${this.clearThreshold * 400}`);
+                this.transitionToCleared();
+            }
+
+            // Clear!リトライ判定（高さが下がったら再挑戦可能）
+            if (this.accumulatedHeight < this.clearThreshold * 400 * 0.7 && this.clearTriggered) {
                 this.clearTriggered = false;
             }
         } else {
@@ -72,12 +89,15 @@ export class PlantView implements IView {
 
     /**
      * v1.0: cleared状態への遷移
+     * v1.5.7: accumulatedHeightベースに変更
      */
     private transitionToCleared(): void {
+        console.log('[PlantView] Transitioning to CLEARED state');
         this.plantState = 'cleared';
-        this.clearedHeight = this.smoothedVolume * 400;  // 現在の高さを保存
+        this.clearedHeight = this.accumulatedHeight;  // 累積高さを保存
         this.clearTriggered = true;
         this.triggerClear(this.calculateWallY(), this.calculateImpactX());
+        console.log(`[PlantView] State now: ${this.plantState}`);
     }
 
     /**
@@ -107,6 +127,14 @@ export class PlantView implements IView {
      */
     setClearThreshold(threshold: number): void {
         this.clearThreshold = Math.max(0.5, Math.min(1.0, threshold));
+    }
+
+    /**
+     * v1.5.7: マイク感度（音量閾値）を設定（スライダー連携）
+     * 対数スケール: 0.001-0.20
+     */
+    setVolumeThreshold(threshold: number): void {
+        this.volumeThreshold = Math.max(0.001, Math.min(0.20, threshold));
     }
 
     /**
@@ -147,13 +175,11 @@ export class PlantView implements IView {
         // コンクリート壁を描画（赤ライン位置に横向き）
         this.concrete.drawWall(p, wallY, 60, [120, 120, 120], 0.9);
 
-        // v1.0: Clear!判定（clearThreshold以上、壁の位置を渡す）
-        if (this.smoothedVolume > this.clearThreshold && !this.clearTriggered && this.plantState === 'growing') {
-            this.transitionToCleared();
-        }
+        // v1.5.7: Clear!判定はupdate()で実行（draw()内での判定を廃止）
 
-        // 茎を描画（v1.0: cleared状態では固定高さ使用）
-        const displayVolume = this.plantState === 'cleared' ? this.clearedHeight / 400 : this.smoothedVolume;
+        // v1.5.7: 茎を描画（accumulatedHeightベース、cleared状態では固定高さ使用）
+        const displayHeight = this.plantState === 'cleared' ? this.clearedHeight : this.accumulatedHeight;
+        const displayVolume = displayHeight / 400;  // 0-1の範囲に正規化
         drawStem(p, displayVolume, this.frequency);
 
         // コンクリートひび割れを描画
@@ -165,12 +191,14 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: 植物の高さを0にリセット
+     * v1.5.7: accumulatedHeightもリセット
      * ChallengeModeViewから呼び出される
      */
     resetPlantHeight(): void {
-        // v1.0版では単純に音量をリセット（cleared状態を保護）
+        // cleared状態を保護
         if (this.plantState !== 'cleared') {
             this.smoothedVolume = 0;
+            this.accumulatedHeight = 0;  // v1.5.7: 累積高さもリセット
             this.particles.clear();
             this.concrete = new ConcreteEffect();
         }
@@ -178,14 +206,17 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: GameOver状態への遷移
+     * v1.5.7: cleared状態を保護
      * ChallengeModeViewから呼び出される
      */
     transitionToGameOver(): void {
         // cleared状態の場合はGameOverに遷移しない（成功状態を保護）
         if (this.plantState === 'cleared') {
+            console.log('[PlantView] Already cleared, ignoring GameOver transition');
             return;
         }
 
+        console.log('[PlantView] Transitioning to GameOver');
         this.plantState = 'gameOver';
     }
 
@@ -206,12 +237,14 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: リセット処理
+     * v1.5.7: accumulatedHeightもリセット
      */
     reset(): void {
         this.plantState = 'growing';
         this.volume = 0;
         this.frequency = 0;
         this.smoothedVolume = 0;
+        this.accumulatedHeight = 0;  // v1.5.7: 累積高さもリセット
         this.clearedHeight = 0;
         this.clearTriggered = false;
 

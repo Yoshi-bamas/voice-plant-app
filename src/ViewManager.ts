@@ -101,6 +101,30 @@ export class ViewManager {
     }
 
     /**
+     * v1.5.7: マイク感度（音量閾値）を一括設定
+     * @param threshold - 音量閾値（0.03-0.20）
+     */
+    setVolumeThreshold(threshold: number): void {
+        // PlantView系のみにsetVolumeThresholdを適用
+        const view = this.plantView as any;
+        if (typeof view.setVolumeThreshold === 'function') {
+            view.setVolumeThreshold(threshold);
+        }
+        const viewEasy = this.plantViewEasy as any;
+        if (typeof viewEasy.setVolumeThreshold === 'function') {
+            viewEasy.setVolumeThreshold(threshold);
+        }
+        const fractal = this.fractalPlantView as any;
+        if (typeof fractal.setVolumeThreshold === 'function') {
+            fractal.setVolumeThreshold(threshold);
+        }
+        const fractalEasy = this.fractalPlantViewEasy as any;
+        if (typeof fractalEasy.setVolumeThreshold === 'function') {
+            fractalEasy.setVolumeThreshold(threshold);
+        }
+    }
+
+    /**
      * 現在のViewを更新
      */
     update(audioAnalyzer: AudioAnalyzer): void {

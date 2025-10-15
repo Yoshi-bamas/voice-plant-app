@@ -312,7 +312,7 @@ body {
 
 .result-title {
     position: absolute;
-    top: calc(50% - 100px);
+    top: 150px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 96px;
@@ -324,10 +324,10 @@ body {
 
 .result-message {
     position: absolute;
-    top: 50%;
+    top: 280px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 32px;
+    font-size: 28px;
     text-align: center;
     margin: 0;
 }

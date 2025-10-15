@@ -1,46 +1,41 @@
 /**
  * GrowthSystem.ts (v1.4新規追加)
- * MAX-based持続型成長システム
+ * v1.5.7改: 持続時間ベース成長システム
  *
- * 従来: 瞬間音量で高さ決定 → 音量が下がると植物も縮む
- * v1.4: MAX音量到達後、その音量を維持している間は少しずつ成長
+ * 従来: MAX音量到達後、その音量を維持している間は少しずつ成長
+ * v1.5.7: 閾値以上の音量を維持している「累積時間」で成長（音量の大小は影響小）
  */
 
 export class GrowthSystem {
-    private maxVolume: number = 0;           // 観測された最大音量
-    private sustainedFrames: number = 0;     // MAX音量を維持しているフレーム数
+    private maxVolume: number = 0;           // 観測された最大音量（記録用）
+    private sustainedFrames: number = 0;     // 閾値以上を維持しているフレーム数
     private currentHeight: number = 0;       // 現在の植物の高さ（0-400px）
-    private readonly growthRate: number = 2.0;  // 1フレームあたりの成長量（px）
+    private readonly growthRate: number = 0.8;  // v1.5.7: 1フレームあたりの成長量（400px到達まで約8秒）
     private readonly maxHeight: number = 400;   // 植物の最大高さ（px）
-    private readonly sustainThreshold: number = 0.95; // MAX音量の何%で「維持」とみなすか
+    private readonly volumeThreshold: number = 0.08; // v1.5.7: 成長開始閾値（VoiceContinuityと同じ）
 
     /**
      * フレームごとの更新処理
+     * v1.5.7改: 持続時間ベース成長
      * @param volume - 現在の音量（0-1）
      */
     update(volume: number): void {
-        // v1.5.7修正: 最小音量閾値を追加（ノイズを除外）
-        const MIN_VOLUME_THRESHOLD = 0.15;  // 15%以下の音量は無視
-
-        // MAX音量を更新（ただし、最小閾値以上の場合のみ）
-        if (volume > this.maxVolume && volume >= MIN_VOLUME_THRESHOLD) {
+        // v1.5.7: 最大音量記録（デバッグ用、成長ロジックには影響しない）
+        if (volume > this.maxVolume) {
             this.maxVolume = volume;
         }
 
-        // v1.5.7修正: 絶対閾値と相対閾値の両方をチェック
-        const isAboveMinThreshold = volume >= MIN_VOLUME_THRESHOLD;
-        const isAtMax = volume >= this.maxVolume * this.sustainThreshold;
-
-        // 両方の条件を満たす場合のみ成長
-        if (isAtMax && isAboveMinThreshold && this.maxVolume > MIN_VOLUME_THRESHOLD) {
+        // v1.5.7: 閾値以上の音量を「維持している時間」で成長
+        if (volume >= this.volumeThreshold) {
+            // 閾値以上 → 成長継続
             this.sustainedFrames++;
             this.currentHeight += this.growthRate;
 
             // 最大高さを超えないようにクランプ
             this.currentHeight = Math.min(this.currentHeight, this.maxHeight);
         } else {
-            // MAX未達の場合、sustainedFramesをリセット（連続性を要求）
-            this.sustainedFrames = 0;
+            // 閾値未満 → 成長停止（高さは維持、リセットしない）
+            // sustainedFramesはリセットしない（累積時間を記録）
         }
     }
 
