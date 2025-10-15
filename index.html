@@ -10,8 +10,48 @@
     <div class="app-container">
         <!-- Canvas Area -->
         <div class="canvas-area" id="canvasArea">
+            <!-- v1.5.2: HTMLオーバーレイテキスト（WEBGL text()エラー回避） -->
+            <div id="modeSelectOverlay" class="mode-select-overlay" style="display: none;">
+                <h1 class="mode-select-title">Voice Plant App</h1>
+                <p class="mode-select-subtitle">Select Mode</p>
+                <p class="mode-select-button-test">Test Mode</p>
+                <p class="mode-select-button-challenge">Challenge Mode</p>
+                <p class="mode-select-desc-test">Test: View切替、自由実験</p>
+                <p class="mode-select-desc-challenge">Challenge: 連続発声チャレンジ（0.5秒途切れでリセット）</p>
+            </div>
+            <div id="challengeIdleOverlay" class="challenge-idle-overlay" style="display: none;">
+                <h2 class="challenge-idle-title">Challenge Mode</h2>
+                <p class="challenge-idle-warning">⚠️ 声が0.5秒途切れると植物がリセットされます</p>
+                <p class="challenge-idle-button">CHALLENGE START</p>
+            </div>
+            <div id="challengeStatusOverlay" class="challenge-status-overlay" style="display: none;">
+                <p class="challenge-status-message" id="challengeStatusMessage">発声してください</p>
+            </div>
+            <div id="messageOverlay" class="message-overlay" style="display: none;">
+                <p class="message-line1">大声を出して</p>
+                <p class="message-line2">想いを伝えよう！</p>
+                <p class="message-sub">声を途切れさせずに植物を育てろ！</p>
+            </div>
+            <div id="countdownOverlay" class="countdown-overlay" style="display: none;">
+                <p class="countdown-number" id="countdownNumber">3</p>
+            </div>
+            <div id="resultOverlay" class="result-overlay" style="display: none;">
+                <p class="result-title" id="resultTitle">CLEAR!</p>
+                <p class="result-message" id="resultMessage">目標を達成しました！</p>
+            </div>
+            <div id="testIdleOverlay" class="test-idle-overlay" style="display: none;">
+                <h2 class="test-idle-title">Test Mode</h2>
+                <p class="test-idle-subtitle">自由実験モード - View切替・設定調整可能</p>
+                <p class="test-idle-desc1">マイクを起動してゲームを開始しましょう</p>
+                <p class="test-idle-desc2">View切替、Easy Mode、Clear Lineスライダーを試せます</p>
+            </div>
+
+            <!-- Existing Buttons (一部保持) -->
             <button id="startButton" class="start-button">Start</button>
+            <button id="challengeButton" class="challenge-button">CHALLENGE!</button>
             <div id="clearMessage" class="clear-message">Clear!</div>
+            <div id="gameOverMessage" class="game-over-message">Game Over</div>
+            <button id="backButton" class="back-button back-button--hidden">Back to Start</button>
         </div>
 
         <!-- Console Area -->
@@ -61,6 +101,10 @@
                     <div class="console-data-item">
                         <span>State:</span>
                         <span id="stateValue">growing</span>
+                    </div>
+                    <div class="console-data-item">
+                        <span>Time:</span>
+                        <span id="timeValue">--</span>
                     </div>
                 </div>
             </div>

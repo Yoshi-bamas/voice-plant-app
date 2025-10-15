@@ -649,3 +649,210 @@ export interface IClearTrigger {
 - **View独立性:** PlantView、FractalPlantViewが個別にエフェクト統合
 - **プロトタイプ優先:** シンプルな実装でロジック検証
 - **拡張容易性:** インターフェースとモジュール分離で安全に機能追加
+
+---
+
+## v1.3追加機能（2025年実装）
+
+### ゲームモード実装
+
+#### PlantState型拡張
+```typescript
+// types.ts（v1.3）
+export type PlantState = 'growing' | 'cleared' | 'gameOver';
+```
+
+**状態遷移図（v1.3版）:**
+```
+[初期状態: growing]
+    ↓
+    タイマー開始（30秒 or 60秒）
+    ↓
+    音量入力で成長
+    ↓
+    ┌─────────────────────────┐
+    │ smoothedVolume > clearThreshold? │
+    ├─────────────────────────┤
+    │ Yes → [cleared]         │
+    │   勝利！                │
+    │   Clearメッセージ表示    │
+    │   2秒後に粒子クリア      │
+    │   継続エフェクト開始     │
+    └─────────────────────────┘
+    ↓ No
+    ┌─────────────────────────┐
+    │ 制限時間経過？           │
+    ├─────────────────────────┤
+    │ Yes → [gameOver]        │
+    │   敗北...               │
+    │   GameOverメッセージ表示 │
+    │   Backボタン出現        │
+    └─────────────────────────┘
+```
+
+#### タイマー機能実装
+```typescript
+// PlantView.ts（v1.3追加）
+export class PlantView implements IView {
+    private startTime: number = 0;
+    private timeLimit: number = 30000;  // 30秒
+    private gameOverFrame: number = 0;
+
+    constructor() {
+        this.startTime = Date.now();
+    }
+
+    update(audioAnalyzer: AudioAnalyzer): void {
+        if (this.plantState === 'growing') {
+            const elapsed = Date.now() - this.startTime;
+            if (elapsed >= this.timeLimit) {
+                this.transitionToGameOver();
+            }
+        }
+        // ... 既存処理
+    }
+
+    private transitionToGameOver(): void {
+        this.plantState = 'gameOver';
+        this.showGameOverMessage();
+    }
+}
+```
+
+#### リセット機能
+```typescript
+// IView拡張（v1.3）
+export interface IView {
+    update(audioAnalyzer: AudioAnalyzer): void;
+    draw(p: p5): void;
+    setClearThreshold?(threshold: number): void;
+    getPlantState?(): PlantState;              // v1.3追加
+    reset?(): void;                             // v1.3追加
+    getRemainingTime?(): number | null;        // v1.3追加
+}
+
+// ViewManager.ts（v1.3追加）
+export class ViewManager {
+    resetCurrentView(): void {
+        this.currentView.reset?.();
+    }
+
+    getRemainingTime(): number | null {
+        return this.currentView.getRemainingTime?.() ?? null;
+    }
+}
+```
+
+### v1.2/v1.3パフォーマンス最適化
+
+#### WebGL移行完了
+```typescript
+// main.ts（v1.2実装済み）
+p.createCanvas(800, 600, p.WEBGL);
+
+// 全Viewで座標系補正
+draw(p: p5): void {
+    p.translate(-p.width / 2, -p.height / 2);
+    // 既存描画コード（互換性100%）
+}
+```
+
+#### 粒子システム最適化
+**v1.3最適化内容:**
+- 粒子数: 5000個 → **500個**（10分の1、FPS安定化）
+- 残像トレイル: 8フレーム → **3フレーム**（line()描画削除）
+- グロー層: 4層 → **2層**（外側グロー + 実体のみ）
+- Clear後自動クリア: **2秒後にバースト粒子削除**
+
+```typescript
+// ParticleSystem.ts（v1.3最適化版）
+export class ParticleSystem {
+    draw(p: p5): void {
+        this.particles.forEach(particle => {
+            p.push();
+            p.translate(particle.x, particle.y, particle.z);
+            p.rotateZ(particle.rotation);
+
+            // 外側グロー（1.5倍）
+            p.fill(particle.color[0], particle.color[1], particle.color[2], alpha * 0.3);
+            p.sphere(baseSize * 1.5);
+
+            // 実体（鮮明）
+            p.fill(particle.color[0], particle.color[1], particle.color[2], alpha);
+            p.sphere(baseSize);
+
+            p.pop();
+        });
+    }
+}
+```
+
+**描画オブジェクト数の削減:**
+- **修正前:** 5000個×4球体+5000個×8本線 = 60,000オブジェクト
+- **修正後:** 500個×2球体 = 1,000オブジェクト
+- **削減率:** 98.3%削減 → **60fps安定動作**
+
+#### Clear後の軽量化
+```typescript
+// PlantView.ts（v1.3最適化）
+private transitionToCleared(): void {
+    this.plantState = 'cleared';
+    this.triggerClear();
+
+    // 2秒後に粒子クリア
+    setTimeout(() => {
+        if (this.plantState === 'cleared') {
+            this.particles.clear();  // バースト粒子を削除
+            // 継続エフェクト（花びら30個+キラキラ15個）のみ残る
+        }
+    }, 2000);
+}
+```
+
+### UI/UX強化
+
+#### コンソールUI（v1.0）
+- Matrix風スタイリング（ネオン緑、Courier New）
+- リアルタイムデバッグ情報（音量、周波数、状態、タイマー）
+- Clearライン調整スライダー（0.5-1.0）
+
+#### ゲームUI（v1.3）
+- タイマー表示（Time: Xs）
+- Game Overメッセージ（赤色グロー、フェードイン）
+- Backボタン（Clear/GameOver後に表示）
+
+```html
+<!-- index.html（v1.3追加要素） -->
+<div id="gameOverMessage" class="game-over-message">Game Over</div>
+<button id="backButton" class="back-button back-button--hidden">Back to Start</button>
+
+<div class="console-data-item">
+    <span>Time:</span>
+    <span id="timeValue">--</span>
+</div>
+```
+
+### パフォーマンス指標
+
+| 項目 | v1.0 | v1.2 | v1.3最適化 |
+|------|------|------|------------|
+| レンダリング | Canvas 2D | **WebGL** | WebGL |
+| 粒子数（バースト） | 150個 | 5000個 | **500個** |
+| 粒子数（継続） | 20個 | 20個 | **45個** |
+| グロー層 | 2層 | 4層 | **2層** |
+| 残像トレイル | なし | 8フレーム | **削除** |
+| 描画オブジェクト数 | 300個 | 60,000個 | **1,000個** |
+| FPS（目標） | 60fps | 30fps | **60fps** |
+
+### 今後のロードマップ
+
+**v1.4予定（演出強化）:**
+- WEBGL_IDEAS.md参照
+- カメラワーク（音量連動ズーム）
+- ダイナミックライティング
+- 3D粒子トルネード
+
+**v2.0予定（マルチプレイヤー）:**
+- 協力成長モード
+- 競争モード
+- リアルタイム同期（WebSocket）

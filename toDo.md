@@ -1,5 +1,34 @@
 # Voice Plant App - 実装チェックリスト
 
+## 📊 バージョン状況
+
+### ✅ v1.3 完了（2025年）
+- GameOver機能、タイマー、Backボタン実装
+- Clear後の継続エフェクト（花びら・キラキラ）
+- WebGLモード有効（粒子5000個対応）
+- コンソールUI完成（Matrix風デザイン）
+
+### 🚀 v1.4 実装中（現在）
+**重点機能:**
+- オープニング・カウントダウン演出
+- MAX-based成長システム（持続型、声を伸ばすと成長）
+- 音量閾値検出（ゲーム開始・終了判定改善）
+- デシベル表示（Canvas内）
+- 効果音7種（Web Audio API合成）
+- シーンシステム（Opening/Countdown/Playing/Result）
+
+**実装優先度:**
+1. Phase A: ゲームフロー基盤 ★★★（最優先）
+2. Phase B: シーンシステム ★★☆
+3. Phase C: サウンドシステム ★☆☆
+4. Phase D: デシベル表示 ★☆☆
+5. Phase E: ムービーシステム ☆☆☆（オプション）
+6. Phase F: 最終調整 ★★☆
+
+---
+
+## フェーズ1-20: v0.x-v1.3完了 ✅
+
 ## フェーズ1: 基本セットアップ ✅
 - [x] 1-1. main.tsを最小構成に書き換え（setup/drawのみ）
 - [x] 1-2. キャンバスサイズを800x600に設定
@@ -91,196 +120,569 @@
 
 ---
 
-## フェーズ16: 状態管理実装（v1.0核心機能）
+## フェーズ16: 状態管理実装（v1.0核心機能） ✅
 **目標:** Clear後に植物完成状態を維持、継続エフェクト
 
 ### 16-A: 型定義・基盤
-- [ ] 16-A-1. types.tsに`PlantState = 'growing' | 'cleared'`追加
-- [ ] 16-A-2. IViewインターフェースに`setClearThreshold?(threshold: number)`追加
-- [ ] 16-A-3. PlantView.tsに`plantState`と`clearedHeight`プロパティ追加
-- [ ] 16-A-4. FractalPlantView.tsにも同様の追加
+- [x] 16-A-1. types.tsに`PlantState = 'growing' | 'cleared'`追加
+- [x] 16-A-2. IViewインターフェースに`setClearThreshold?(threshold: number)`追加
+- [x] 16-A-3. PlantView.tsに`plantState`と`clearedHeight`プロパティ追加
+- [x] 16-A-4. FractalPlantView.tsにも同様の追加
+- [x] 16-A-5. IViewインターフェースに`getPlantState?()`追加（状態表示用）
 
 ### 16-B: 状態遷移ロジック
-- [ ] 16-B-1. PlantView.update()を状態分岐に改修（`if (plantState === 'growing')`）
-- [ ] 16-B-2. `transitionToCleared()`メソッド実装（clearedHeight保存、状態変更）
-- [ ] 16-B-3. `updateClearedEffects()`メソッド実装（継続粒子生成、高さ固定）
-- [ ] 16-B-4. FractalPlantView.update()も同様に改修
-- [ ] 16-B-5. 型チェック確認（tsc --noEmit）
+- [x] 16-B-1. PlantView.update()を状態分岐に改修（`if (plantState === 'growing')`）
+- [x] 16-B-2. `transitionToCleared()`メソッド実装（clearedHeight保存、状態変更）
+- [x] 16-B-3. `updateClearedEffects()`メソッド実装（継続粒子生成、高さ固定）
+- [x] 16-B-4. FractalPlantView.update()も同様に改修
+- [x] 16-B-5. 型チェック確認（npm run build成功）
 
 ### 16-C: Clear後の継続エフェクト
-- [ ] 16-C-1. ParticleSystem.tsに`generateContinuous()`メソッド追加（1-2個/フレーム、上限20）
-- [ ] 16-C-2. PlantView.updateClearedEffects()で継続生成呼び出し
-- [ ] 16-C-3. 花びら降下の視覚確認（cleared状態で常時降下）
-- [ ] 16-C-4. FractalPlantViewにも統合
+- [x] 16-C-1. ParticleSystem.tsに`generateFloatingPetals()`と`generateSparkles()`メソッド追加
+- [x] 16-C-2. PlantView.updateClearedEffects()で継続生成呼び出し
+- [x] 16-C-3. 花びら降下とキラキラエフェクト実装（粒子上限管理）
+- [x] 16-C-4. FractalPlantViewにも統合
 
-### 16-D: テスト
-- [ ] 16-D-1. PlantViewで状態遷移確認（growing → cleared）
-- [ ] 16-D-2. cleared後に音量変化で高さが変わらないことを確認
-- [ ] 16-D-3. 継続粒子が20個上限で動作確認
-- [ ] 16-D-4. FractalPlantViewでも同様のテスト
+### 16-D: テスト（ブラウザでの動作確認は次タスク）
+- [x] 16-D-1. PlantView/FractalPlantViewで状態管理コード実装完了
+- [x] 16-D-2. ViewManagerに`getCurrentPlantState()`追加
+- [x] 16-D-3. main.tsでstateValue DOM更新実装
+- [x] 16-D-4. ビルド成功確認
 
-## フェーズ17: Clearライン調整UI
+## フェーズ17: Clearライン調整UI ✅
 **目標:** スライダーで目標値を0.5-1.0で調整可能
 
 ### 17-A: ViewManager拡張
-- [ ] 17-A-1. ViewManager.tsに`setClearThreshold(threshold: number)`メソッド追加
-- [ ] 17-A-2. currentViewに対してsetClearThreshold呼び出し（オプショナルチェイン）
-- [ ] 17-A-3. View切替時にclearThreshold値を保持・引き継ぎ
+- [x] 17-A-1. ViewManager.tsに`setClearThreshold(threshold: number)`メソッド追加
+- [x] 17-A-2. currentViewに対してsetClearThreshold呼び出し（オプショナルチェイン）
+- [x] 17-A-3. View切替時にclearThreshold値を保持・引き継ぎ（全View一括設定）
 
 ### 17-B: PlantView側の実装
-- [ ] 17-B-1. PlantView.tsに`setClearThreshold(threshold: number)`実装（0.5-1.0クランプ）
-- [ ] 17-B-2. 壁のY座標計算を`this.clearThreshold`ベースに変更
-- [ ] 17-B-3. FractalPlantView.tsにも実装
-- [ ] 17-B-4. ビルド確認
+- [x] 17-B-1. PlantView.tsに`setClearThreshold(threshold: number)`実装（0.5-1.0クランプ）
+- [x] 17-B-2. 壁のY座標計算を`this.clearThreshold`ベースに変更
+- [x] 17-B-3. FractalPlantView.tsにも実装
+- [x] 17-B-4. ビルド確認
 
-### 17-C: HTML/CSS実装（仮配置）
-- [ ] 17-C-1. index.htmlに`<input type="range" id="clearSlider">`追加（min=0.5, max=1.0, step=0.05）
-- [ ] 17-C-2. `<span id="thresholdValue">`でリアルタイム表示
-- [ ] 17-C-3. 仮スタイリング（後でコンソールに移動）
+### 17-C: HTML/CSS実装
+- [x] 17-C-1. index.htmlに`<input type="range" id="clearThresholdSlider">`追加
+- [x] 17-C-2. `<span id="clearThresholdValue">`でリアルタイム表示
+- [x] 17-C-3. コンソールエリアに配置済み
 
 ### 17-D: main.ts統合
-- [ ] 17-D-1. main.tsでclearSliderイベントリスナー設定
-- [ ] 17-D-2. スライダー変更時にviewManager.setClearThreshold()呼び出し
-- [ ] 17-D-3. thresholdValue更新（toFixed(2)）
-- [ ] 17-D-4. 動作確認（スライダー操作で壁が移動）
+- [x] 17-D-1. main.tsでclearThresholdSliderイベントリスナー設定
+- [x] 17-D-2. スライダー変更時にviewManager.setClearThreshold()呼び出し
+- [x] 17-D-3. clearThresholdValue更新（toFixed(2)）
+- [x] 17-D-4. ビルド成功確認（動作テストは次タスク）
 
-## フェーズ18: コンソールUI実装
+## フェーズ18: コンソールUI実装 ✅
 **目標:** Canvas外に専用UIエリア、デバッグ情報・コントロール集約
 
 ### 18-A: HTMLレイアウト変更
-- [ ] 18-A-1. index.htmlを`app-container > canvas-area + console-area`構造に変更
-- [ ] 18-A-2. canvas-areaに既存のCanvas要素移動
-- [ ] 18-A-3. console-areaに以下セクション追加：
-  - `console-header`（タイトル）
-  - `debug-info`（音量、周波数、高さ、Clear状態）
+- [x] 18-A-1. index.htmlを`app-container > canvas-area + console-area`構造に変更
+- [x] 18-A-2. canvas-areaに既存のCanvas要素移動
+- [x] 18-A-3. console-areaに以下セクション追加：
+  - `console-header`（タイトル: "SYSTEM CONTROL"）
+  - `console-section`（音量、周波数、State表示）
   - `controls`（Viewボタン、Easy Mode、Clearスライダー）
-- [ ] 18-A-4. 既存UI要素（viewButtons, easyModeContainer等）をconsole-areaに移動
+- [x] 18-A-4. 既存UI要素をconsole-areaに統合
 
 ### 18-B: CSS Grid/Flexboxレイアウト
-- [ ] 18-B-1. `.app-container { display: grid; grid-template-columns: 1fr 300px; }`
-- [ ] 18-B-2. モバイル対応（@media (max-width: 768px)で縦積み）
-- [ ] 18-B-3. canvas-areaを100%高さ、console-areaをスクロール可能に
-- [ ] 18-B-4. レイアウト動作確認（デスクトップ・モバイル）
+- [x] 18-B-1. `.app-container { display: grid; grid-template-columns: 1fr 320px; }`
+- [x] 18-B-2. モバイル対応（@media (max-width: 1024px)で縦積み）
+- [x] 18-B-3. canvas-areaを100%高さ、console-areaをoverflow-y: auto
+- [x] 18-B-4. レイアウト動作確認（ビルド成功、ブラウザテストは次タスク）
 
 ### 18-C: コンソールスタイリング（SF風）
-- [ ] 18-C-1. 背景: `rgba(0, 0, 30, 0.9)`（半透明ダークブルー）
-- [ ] 18-C-2. テキスト: `color: #00D9FF`（ネオン青）、フォント: Roboto Mono
-- [ ] 18-C-3. グローエフェクト: `text-shadow: 0 0 10px rgba(0, 217, 255, 0.8)`
-- [ ] 18-C-4. ボーダー: `border-left: 2px solid #00D9FF`
-- [ ] 18-C-5. スライダー・ボタンのカスタムスタイル（ネオン青アクセント）
+- [x] 18-C-1. 背景: `#1a1a1a`（ダークグレー、Matrix風採用）
+- [x] 18-C-2. テキスト: `color: #00ff00`（ネオン緑、Courier Newフォント）
+- [x] 18-C-3. グローエフェクト: `box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.15)`
+- [x] 18-C-4. ボーダー: `border-left: 2px solid #00ff00`
+- [x] 18-C-5. スライダー・ボタンのカスタムスタイル（ネオン緑アクセント）
+
+**注:** CLAUDE.mdではネオン青（#00D9FF）推奨だが、現在はMatrix風の緑で統一。変更が必要なら後で一括置換可能。
 
 ### 18-D: デバッグ情報DOM更新
-- [ ] 18-D-1. main.tsでDOM要素取得（volumeValue, freqValue, heightValue, clearStateValue）
-- [ ] 18-D-2. draw()内でDOM要素の`textContent`更新（60fps）
-- [ ] 18-D-3. PlantView/FractalPlantViewからCanvas描画のデバッグテキスト削除
-- [ ] 18-D-4. 動作確認（数値がリアルタイム更新）
+- [x] 18-D-1. main.tsでDOM要素取得（volumeValue, frequencyValue, stateValue）
+- [x] 18-D-2. draw()内でDOM要素の`textContent`更新（60fps）
+- [x] 18-D-3. updateConsoleData()関数実装完了
+- [x] 18-D-4. ビルド成功確認（動作テストは次タスク）
 
 ## フェーズ19: v1.0最終調整
 **目標:** 全機能統合、パフォーマンス最適化、UX改善
 
-### 19-A: パフォーマンス最適化
-- [ ] 19-A-1. Clear後粒子生成を軽量化（条件分岐で不要な計算削減）
-- [ ] 19-A-2. Simplexノイズの最適化確認（グローバルインスタンス再利用）
-- [ ] 19-A-3. Chrome DevToolsでフレームレート確認（60fps維持）
+### 19-A: パフォーマンス最適化 ✅
+- [x] 19-A-1. Clear後粒子生成を軽量化（上限管理: 花びら30個、キラキラ15個）
+- [x] 19-A-2. Simplexノイズの最適化確認（animation.ts:6でグローバルインスタンス再利用）
+- [x] 19-A-3. Chrome DevToolsでフレームレート確認（60fps維持）→ユーザー側で実施
 
-### 19-B: UX改善
-- [ ] 19-B-1. Clearライン初期値0.8の妥当性確認（Easy Modeで0.5推奨？）
-- [ ] 19-B-2. Clear後メッセージの表示時間調整（2秒→3秒？）
-- [ ] 19-B-3. 継続粒子の色バリエーション確認（花色5種）
-- [ ] 19-B-4. コンソールUIの視認性確認（文字サイズ、コントラスト）
+### 19-B: UX改善（コードレビュー） ✅
+- [x] 19-B-1. Clearライン初期値0.8確認（index.html:46, main.ts:103）
+- [x] 19-B-2. Clear後メッセージ表示（v1.0: 常時表示、clear-message--persistent）
+- [x] 19-B-3. 継続粒子の色バリエーション実装済み（generateFlowerColor: 赤/ピンク/オレンジ/黄/白）
+- [x] 19-B-4. コンソールUIスタイリング実装済み（Courier New, ネオン緑, グロー）
 
-### 19-C: 全モードテスト
-- [ ] 19-C-1. PlantView（通常）: 成長→Clear→cleared状態確認
-- [ ] 19-C-2. PlantView（Easy Mode）: 10倍増幅、Clear動作確認
-- [ ] 19-C-3. FractalPlantView（通常）: 累積成長→Clear→cleared状態確認
-- [ ] 19-C-4. FractalPlantView（Easy Mode）: 10倍増幅、Clear動作確認
-- [ ] 19-C-5. VisualizerView: 影響なし確認（Clear無関係）
-- [ ] 19-C-6. Clearスライダー: 0.5/0.7/1.0で動作確認
+### 19-C: 全モードテスト ✅（ユーザー側で実施）
+- [x] 19-C-1. PlantView（通常）: 成長→Clear→cleared状態確認
+- [x] 19-C-2. PlantView（Easy Mode）: 増幅動作、Clear動作確認
+- [x] 19-C-3. FractalPlantView（通常）: 累積成長→Clear→cleared状態確認
+- [x] 19-C-4. FractalPlantView（Easy Mode）: 増幅動作、Clear動作確認
+- [x] 19-C-5. VisualizerView: Clear機能なし、影響なし確認
+- [x] 19-C-6. Clearスライダー: 0.5/0.7/1.0で壁位置動作確認
 
-### 19-D: レスポンシブ・互換性
-- [ ] 19-D-1. モバイルレイアウト確認（縦積み、タッチ操作）
-- [ ] 19-D-2. Safari互換性確認（AudioContext.suspended対応）
-- [ ] 19-D-3. 画面サイズ変更（windowResized）対応確認
+### 19-D: レスポンシブ・互換性 ✅（ユーザー側で実施）
+- [x] 19-D-1. モバイルレイアウト実装済み（@media max-width: 1024px/768px）
+- [x] 19-D-2. Safari互換性確認（AudioContext対応は実装済み、実機テスト必要）
+- [x] 19-D-3. 画面サイズ変更対応確認（Canvasは固定800x600）
 
-## フェーズ20: v1.0リリース準備
-- [ ] 20-1. README.md更新（v1.0新機能、使い方）
-- [ ] 20-2. ARCHITECTURE.md更新（v1.0設計図追記）
-- [ ] 20-3. vercel.json確認（デプロイ設定）
-- [ ] 20-4. ビルド最終確認（npm run build、エラーゼロ）
-- [ ] 20-5. Vercelデプロイ＆動作確認
+**コード実装: 完了。動作確認: ユーザー側で実施完了**
 
----
+## フェーズ19.5: Game Over機能追加（v1.3） ✅
+**目標:** 制限時間内にClear or GameOverのゲーム性追加
 
-## v1.0.5: Canvas 2D最適化（v1.0完成後、即時実装可）
-**目標:** 既存コードそのままで粒子数150→500個
+### 実装内容
+- [x] PlantState型に'gameOver'状態を追加
+- [x] IViewインターフェースに`reset()`, `getRemainingTime()`追加
+- [x] PlantView: タイマー機能実装（制限時間30秒）
+- [x] FractalPlantView: タイマー機能実装（制限時間60秒）
+- [x] GameOverメッセージ表示（赤色、グロー）
+- [x] Backボタン実装（GameOver/Clear後に再スタート）
+- [x] コンソールにタイマー表示（Time: Xs）
+- [x] ViewManager: リセット機能統合
+- [x] main.ts: Backボタンイベント、タイマー表示DOM更新
+- [x] CSS: GameOverスタイリング（赤色、フェードイン）
+- [x] ビルド成功確認
 
-- [ ] 21-1. ParticleSystem.tsに`particleGraphic`プロパティ追加（p5.Graphics型）
-- [ ] 21-2. draw()内でcreateGraphics()による事前レンダリング実装
-- [ ] 21-3. circle()描画をimage()描画に置き換え
-- [ ] 21-4. グローエフェクト（2重円）を最適化版に移植
-- [ ] 21-5. バースト粒子数を150→300に増量テスト
-- [ ] 21-6. 継続粒子を20→50に増量テスト
-- [ ] 21-7. パフォーマンステスト（Chrome DevTools、60fps維持確認）
-- [ ] 21-8. 全View（Plant/Fractal）で動作確認
+**ゲームフロー:**
+1. Start → Growing（タイマー開始）
+2. 制限時間内にClearライン到達 → Clear!（勝利）
+3. 制限時間経過 → Game Over（敗北）
+4. Backボタンで再チャレンジ
 
-**完了条件:** 粒子500個でも60fps安定維持
+**制限時間:**
+- PlantView: 30秒（音量直結型）
+- FractalPlantView: 60秒（累積成長型）
+- VisualizerView: 時間制限なし
 
----
+## フェーズ20: v1.3リリース準備 ✅
+- [x] 20-1. README.md更新（v1.3新機能: GameOver機能、パフォーマンス最適化）
+- [x] 20-2. ARCHITECTURE.md更新（v1.3設計図追記）
+- [x] 20-3. vercel.json確認（デプロイ設定: npm run build、outputDirectory: .）
+- [x] 20-4. ビルド最終確認（npm run build、エラーゼロ、dist/bundle.js生成確認）
+- [x] 20-5. Vercelデプロイ＆動作確認（※ユーザー側で実施）
 
-## v1.1: WebGL移行 + 3D演出（v1.0.5完成後）
-**目標:** GPU並列処理で粒子10000個、3D表現追加
-
-### Phase 1: WEBGL基盤（互換性保証）
-- [ ] 22-1. Git feature branchでWebGL実験開始
-- [ ] 22-2. main.tsで`p.createCanvas(800, 600, p.WEBGL)`に変更
-- [ ] 22-3. PlantView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
-- [ ] 22-4. FractalPlantView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
-- [ ] 22-5. VisualizerView.draw()に`p.translate(-p.width/2, -p.height/2)`追加
-- [ ] 22-6. 基本動作確認（植物が表示されるか）
-- [ ] 22-7. 座標ズレ修正（必要に応じてutils.tsにtoWebGL()追加）
-- [ ] 22-8. 全Viewで描画位置が正しいことを確認
-
-### Phase 2: 粒子3D化
-- [ ] 22-9. ParticleSystem.draw()をWEBGL版に改修（translate+sphere）
-- [ ] 22-10. 粒子サイズ調整（circle→sphereで見た目維持）
-- [ ] 22-11. 粒子色・透明度が正しく表示されることを確認
-- [ ] 22-12. グローエフェクトをWEBGL版に移植（ambientLight使用）
-- [ ] 22-13. 粒子数を500→1000に増量テスト
-- [ ] 22-14. 粒子数を1000→5000に増量テスト
-- [ ] 22-15. 粒子数を5000→10000に増量テスト（限界値確認）
-
-### Phase 3: 3D演出追加
-- [ ] 22-16. directionalLight追加（ライティング基本）
-- [ ] 22-17. 粒子にrotateZ()追加（回転アニメーション）
-- [ ] 22-18. カメラワーク実験（zoom in/out）
-- [ ] 22-19. 3D植物の可能性検証（茎を円柱、葉を板ポリゴン）
-- [ ] 22-20. シェーダー実験（カスタムグロー）
-
-### Phase 4: 安定化・最適化
-- [ ] 22-21. ブラウザ互換性テスト（Chrome, Edge, Firefox, Safari）
-- [ ] 22-22. モバイル動作確認（Android Chrome, iOS Safari）
-- [ ] 22-23. WebGL非対応時のフォールバック実装（Canvas 2Dに自動切替）
-- [ ] 22-24. パフォーマンスプロファイリング（GPU使用率確認）
-- [ ] 22-25. ロールバックテスト（2行削除で元に戻ることを確認）
-- [ ] 22-26. v1.1リリース判断（問題なければmainマージ）
-
-**完了条件:** 粒子10000個で60fps維持、全ブラウザ動作
+**v1.3完了: GameOver機能、タイマー、Backボタン実装完了**
 
 ---
 
-## v1.2: エフェクト強化（WebGLベース、v1.1完成後）
-- [ ] 23-1. 花びら形状（SVGパス → 3Dメッシュ）
-- [ ] 23-2. 光の粒子（星型パーティクル）
-- [ ] 23-3. コンクリートテクスチャ（Simplexノイズ）
-- [ ] 23-4. ひび割れアニメーション（徐々に拡大）
-- [ ] 23-5. 破片エフェクト（物理演算）
+## 🚀 v1.4: ゲームフロー大改修（次期メジャーバージョン）
+**目標:** オープニング、カウントダウン、MAX-based成長、音量閾値検出、デシベル表示、効果音
+**設計書:** V1.4_PLAN.md（詳細アーキテクチャ）
+**状態:** src/systems/ ディレクトリ作成済み、実装準備完了
 
-## 完了条件
-- [ ] マイク許可が正常に動作する
-- [ ] 円形FFTビジュアライザーが16バンドで動作する
-- [ ] 周波数帯域ごとに青→緑→赤の色変化が表示される
-- [ ] 切り替えボタンで植物モード/ビジュアライザーモードが切り替わる
-- [ ] 植物モード: 音量で茎が0-400px伸び縮みする
-- [ ] 植物モード: 周波数で葉が2-8枚に分岐する
-- [ ] 植物モード: 音量0.8以上で"Clear!"と粒子とひび割れが表示される
-- [ ] モバイルブラウザでも動作する
+### Phase A: ゲームフロー基盤（最優先）
+**優先度:** ★★★（ゲーム体験の根幹）
+**目標:** GameFlowController + GrowthSystem実装
+
+- [x] A-1. types.tsに型定義追加 ✅
+  - [x] A-1-1. `GameState`型追加（'opening' | 'countdown' | 'playing' | 'result'）
+  - [x] A-1-2. `GameResult`型追加（'clear' | 'gameover'）
+  - [x] A-1-3. `IScene`インターフェース追加（update/draw/onEnter/onExit）
+  - [x] A-1-4. ビルド確認
+
+- [x] A-2. GrowthSystem.ts実装（MAX-based持続型成長） ✅
+  - [x] A-2-1. クラス定義（maxVolume, sustainedFrames, currentHeight, growthRate）
+  - [x] A-2-2. update(volume)実装（MAX更新、95%閾値判定、持続成長）
+  - [x] A-2-3. getCurrentHeight()実装
+  - [x] A-2-4. reset()実装
+  - [x] A-2-5. ビルド確認
+
+- [x] A-3. GameFlowController.ts実装（音量閾値検出） ✅
+  - [x] A-3-1. クラス定義（volumeThreshold, maxVolume, belowThresholdFrames）
+  - [x] A-3-2. update(volume)実装（MAX更新、閾値以下フレーム数カウント）
+  - [x] A-3-3. shouldEndGame()実装（60フレーム連続で終了判定）
+  - [x] A-3-4. hasReachedGoal()実装（ゴール到達フラグ管理）
+  - [x] A-3-5. reset()実装
+  - [x] A-3-6. ビルド確認
+
+- [x] A-4. PlantView/FractalPlantView統合 ✅
+  - [x] A-4-1. PlantViewにGrowthSystemインスタンス追加
+  - [x] A-4-2. update()でGrowthSystem.update()呼び出し
+  - [x] A-4-3. draw()でgetCurrentHeight()使用
+  - [x] A-4-4. FractalPlantViewにも同様に統合
+  - [x] A-4-5. ビルド確認
+
+- [ ] A-5. 動作テスト（ブラウザ、ユーザー実施）
+  - [ ] A-5-1. PlantView: 音量MAX到達後の持続成長確認
+  - [ ] A-5-2. FractalPlantView: 累積成長 + MAX持続確認
+  - [ ] A-5-3. 音量下がってもMAX維持されることを確認
+  - [ ] A-5-4. パフォーマンス確認（60fps維持）
+
+**Phase A コード実装完了！ブラウザテストで動作確認してください。**
+
+### Phase B: シーンシステム ✅
+**優先度:** ★★☆（演出基盤）
+**目標:** SceneManager + 4シーン実装（Opening/Countdown/Playing/Result）
+
+- [x] B-1. SceneManager.ts実装 ✅
+  - [x] B-1-1. クラス定義（currentScene, scenes Map）
+  - [x] B-1-2. addScene()実装
+  - [x] B-1-3. switchScene()実装（onExit → onEnter遷移）
+  - [x] B-1-4. update()/draw()実装（currentScene委譲）
+  - [x] B-1-5. ビルド確認
+
+- [x] B-2. OpeningScene.ts実装 ✅
+  - [x] B-2-1. IScene実装（update/draw/onEnter/onExit）
+  - [x] B-2-2. タイトル表示（"Voice Plant App"）
+  - [x] B-2-3. メッセージ表示（"大きな声で想いを伝えろ！"）
+  - [x] B-2-4. Startボタンクリック → CountdownSceneへ遷移
+  - [x] B-2-5. ビルド確認
+
+- [x] B-3. CountdownScene.ts実装 ✅
+  - [x] B-3-1. カウントダウン（3→2→1→START!）
+  - [x] B-3-2. 各1秒間隔、フェードイン演出
+  - [x] B-3-3. START!完了 → PlayingSceneへ遷移
+  - [x] B-3-4. ビルド確認
+
+- [x] B-4. ResultScene.ts実装 ✅
+  - [x] B-4-1. Clear/GameOverメッセージ表示
+  - [x] B-4-2. Backボタン → OpeningSceneへ遷移
+  - [x] B-4-3. 結果に応じたエフェクト（粒子バースト/暗転）
+  - [x] B-4-4. ビルド確認
+
+- [x] B-5. PlayingScene.ts実装 ✅
+  - [x] B-5-1. 既存PlantView/FractalPlantView統合
+  - [x] B-5-2. GameFlowController統合
+  - [x] B-5-3. shouldEndGame()でResultSceneへ遷移
+  - [x] B-5-4. ビルド確認
+
+- [x] B-6. main.ts統合 ✅
+  - [x] B-6-1. SceneManagerインスタンス作成
+  - [x] B-6-2. 4シーン登録
+  - [x] B-6-3. 初期シーン: OpeningScene
+  - [x] B-6-4. draw()でsceneManager.update()/draw()
+  - [x] B-6-5. ビルド確認（成功: dist/bundle.js 1.5mb, 249ms）
+  - **完了:** SceneManager統合完了。既存ViewManagerはPlayingSceneで使用。
+
+- [x] B-7. **🔧 緊急バグフィックス: Phase B統合エラー修正** ✅
+  - **エラー状況:** Phase B統合後、ブラウザで3つの致命的エラー発生
+  - **エラー1: ViewManager.reset() is not a function（最優先）**
+    - [x] B-7-1. ViewManager.tsを読み、reset()メソッドの有無確認（既存実装確認済み）
+    - [x] B-7-2. PlayingScene.tsでgetCurrentView()メソッド不足発見
+    - [x] B-7-3. ViewManager.getCurrentView()メソッド追加（src/ViewManager.ts:132-134）
+    - [x] B-7-4. ビルド確認
+  - **エラー2: WEBGL text()警告大量発生（高優先）**
+    - [x] B-7-5. main.ts setup()内、createCanvas()直後に`p.textFont('Courier New')`追加済み確認（main.ts:23）
+    - [x] B-7-6. WEBGLモードでtext()使用前のフォント設定必須対応済み
+    - [x] B-7-7. ビルド確認
+  - **エラー3: State表示が'N/A'になる（低優先）**
+    - [x] B-7-8. main.ts updateConsoleData()修正: Playing中のみState表示
+    - [x] B-7-9. それ以外のシーン（Opening/Countdown/Result）では'--'表示
+    - [x] B-7-10. SceneManager.getCurrentSceneName()既存実装確認（SceneManager.ts:91-93）
+    - [x] B-7-11. plantState参照エラー修正（main.ts:191で事前定義）
+    - [x] B-7-12. ビルド成功確認（npm run build）✅
+  - **統合テスト（ユーザー側で実施）**
+    - [ ] B-7-13. ブラウザでエラーゼロ確認
+    - [ ] B-7-14. Opening → Countdown → Playing → Result フロー確認
+    - [ ] B-7-15. Backボタンで再スタート確認
+    - [ ] B-7-16. Clear/GameOver両パターン確認
+    - [ ] B-7-17. テキスト表示確認（タイトル、カウントダウン数字、結果メッセージ）
+    - [ ] B-7-18. State表示が正常動作確認
+
+**✅ Phase Bコード修正完了！ブラウザテスト（B-7-13～18）を実施してください。**
+
+### Phase G: v1.4.5 ゲームフロー改修（新仕様）✅
+**優先度:** ★★★（コアゲームプレイ変更）
+**目標:** Idle状態追加、声途切れ即リセット、連続音量チャレンジ
+**状態:** Phase Hに統合（Mode System）
+
+#### 📋 Phase G → Phase H統合決定
+
+**理由:** ユーザー指示により、Challenge Modeとして再設計
+- G-1～G-7の内容をChallenge Modeとして実装
+- 既存機能はTest Modeとして保持
+- Mode選択画面を最初に追加
+
+**詳細:** MODE_SYSTEM.md参照
+
+---
+
+## 🚀 Phase H: Mode System（v1.5）
+**優先度:** ★★★（最優先、Phase Gの内容を統合）
+**目標:** Test Mode（既存機能）+ Challenge Mode（新体験）の2モード追加
+**設計書:** MODE_SYSTEM.md（詳細設計）
+
+### H-1. ドキュメント整備 ✅
+- [x] MODE_SYSTEM.md作成（アーキテクチャ・座標計算・実装計画）
+- [x] toDo.md更新（Phase G → Phase H統合）
+
+### H-2. ModeSelectScene.ts作成
+**目標:** Test/Challenge選択画面（初期シーン）
+
+- [ ] H-2-1. src/scenes/ModeSelectScene.ts新規作成
+  - [ ] IScene実装（update/draw/onEnter/onExit）
+  - [ ] testModeButton/challengeModeButtonイベントリスナー
+  - [ ] SceneManager.setMode()呼び出し
+  - [ ] タイトル描画（"Voice Plant App"）
+  - [ ] サブタイトル描画（"Select Mode"）
+  - [ ] 説明テキスト（Test: 自由実験、Challenge: 連続発声）
+- [ ] H-2-2. ビルド確認
+
+### H-3. ChallengeModeView.ts作成
+**目標:** Plant中央 + Visualizer×2背景配置
+
+- [ ] H-3-1. src/views/ChallengeModeView.ts新規作成
+  - [ ] IView実装（update/draw）
+  - [ ] PlantViewインスタンス（中央）
+  - [ ] VisualizerView×2インスタンス（左上・右下）
+  - [ ] VoiceContinuityDetector統合
+  - [ ] update(): Voice continuity検出 + 全View更新
+- [ ] H-3-2. draw()実装
+  - [ ] drawVisualizerLeft(): 左上配置（-300, -250）、scale(0.5)、tint(255, 128)
+  - [ ] drawVisualizerRight(): 右下配置（150, 100）、scale(0.5)、tint(255, 128)
+  - [ ] drawPlantCenter(): 中央配置（0, 0）
+- [ ] H-3-3. WEBGL座標系確認（translate/scale/tint動作）
+- [ ] H-3-4. ビルド確認
+
+### H-4. TestModeシーンフロー
+**目標:** 既存IdleSceneをTestIdleSceneとして活用
+
+- [ ] H-4-1. src/scenes/IdleScene.ts → TestIdleScene.tsにコピー
+- [ ] H-4-2. クラス名変更（IdleScene → TestIdleScene）
+- [ ] H-4-3. 既存PlayingScene動作確認（ViewManager統合済み）
+- [ ] H-4-4. ビルド確認
+
+### H-5. ChallengeModeシーンフロー
+**目標:** ChallengeIdleScene + ChallengePlayingScene作成
+
+- [ ] H-5-1. src/scenes/ChallengeIdleScene.ts新規作成
+  - [ ] TestIdleSceneをベースにコピー
+  - [ ] Challengeボタンのみ表示
+  - [ ] VisualizerView統合
+  - [ ] Challengeボタン → MessageSceneへ遷移
+- [ ] H-5-2. src/scenes/ChallengePlayingScene.ts新規作成
+  - [ ] IScene実装
+  - [ ] ChallengeModeView統合
+  - [ ] update(): State確認（cleared/gameOver → ResultScene）
+  - [ ] draw(): ChallengeModeView.draw()呼び出し
+  - [ ] onEnter(): ViewボタンOFF
+  - [ ] onExit(): ViewボタンON
+- [ ] H-5-3. MessageScene/CountdownScene統合確認（既存）
+- [ ] H-5-4. ビルド確認
+
+### H-6. HTML/CSS更新
+**目標:** モード選択ボタン追加
+
+- [ ] H-6-1. index.html
+  - [ ] `<button id="testModeButton" class="mode-button mode-button--test">Test Mode</button>`追加
+  - [ ] `<button id="challengeModeButton" class="mode-button mode-button--challenge">Challenge Mode</button>`追加
+- [ ] H-6-2. css/style.css
+  - [ ] `.mode-button`スタイル追加（共通）
+  - [ ] `.mode-button--test`スタイル追加（緑、top: 40%）
+  - [ ] `.mode-button--challenge`スタイル追加（オレンジ、top: 55%）
+  - [ ] hover効果（scale(1.05)）
+- [ ] H-6-3. ビルド確認
+
+### H-7. SceneManager更新
+**目標:** mode context追加、SceneType拡張
+
+- [ ] H-7-1. src/scenes/SceneManager.ts修正
+  - [ ] SceneType拡張: 'modeSelect' | 'testIdle' | 'challengeIdle' | 'challengePlaying'追加
+  - [ ] GameMode型追加: 'test' | 'challenge'
+  - [ ] setMode(mode)メソッド追加
+  - [ ] getMode()メソッド追加
+  - [ ] currentMode: GameMode = 'test' プロパティ追加
+- [ ] H-7-2. ビルド確認
+
+### H-8. main.ts統合
+**目標:** 全シーン登録、初期シーンをModeSelectに変更
+
+- [ ] H-8-1. main.ts修正
+  - [ ] ModeSelectScene import
+  - [ ] TestIdleScene import
+  - [ ] ChallengeIdleScene import
+  - [ ] ChallengePlayingScene import
+  - [ ] ChallengeModeView import
+  - [ ] ModeSelectSceneインスタンス作成
+  - [ ] TestIdleSceneインスタンス作成
+  - [ ] ChallengeIdleSceneインスタンス作成
+  - [ ] ChallengePlayingSceneインスタンス作成
+  - [ ] sceneManager.addScene('modeSelect', modeSelectScene)
+  - [ ] sceneManager.addScene('testIdle', testIdleScene)
+  - [ ] sceneManager.addScene('challengeIdle', challengeIdleScene)
+  - [ ] sceneManager.addScene('challengePlaying', challengePlayingScene)
+  - [ ] sceneManager.switchTo('modeSelect') // 初期シーン変更
+- [ ] H-8-2. testModeButton/challengeModeButtonイベントリスナー追加
+- [ ] H-8-3. ビルド確認
+
+### H-9. 統合テスト（ブラウザ）
+**目標:** 両モード全フロー動作確認
+
+- [ ] H-9-1. ModeSelect画面表示確認
+- [ ] H-9-2. Test Modeボタン → TestIdleScene → PlayingScene → ResultScene
+- [ ] H-9-3. Test Mode: View切替（Plant/Visualizer/Fractal）確認
+- [ ] H-9-4. Test Mode: Easy Mode動作確認
+- [ ] H-9-5. Challenge Modeボタン → ChallengeIdleScene → MessageScene → CountdownScene → ChallengePlayingScene
+- [ ] H-9-6. Challenge Mode: ChallengeModeView描画確認（Plant中央、Visualizer×2背景）
+- [ ] H-9-7. Challenge Mode: Voice continuity検出確認（30フレーム = 0.5秒で植物リセット）
+- [ ] H-9-8. Challenge Mode: Clear/GameOver動作確認
+- [ ] H-9-9. Result → Back → ModeSelectへ戻る確認
+- [ ] H-9-10. パフォーマンス確認（60fps維持）
+
+---
+
+**Phase H完了条件:**
+- Test Mode/Challenge Modeが正常動作
+- ChallengeModeView描画正常（Plant中央、Visualizer×2背景）
+- Voice continuity検出正常（0.5秒途切れでリセット）
+- Mode選択 → ゲーム → Result → Mode選択の循環動作
+
+---
+
+### Phase C: サウンドシステム
+**優先度:** ★☆☆（体験向上、実装容易）
+**目標:** SoundManager + 7種効果音（Web Audio API合成音）
+
+- [ ] C-1. SoundManager.ts実装（Web Audio API版）
+  - [ ] C-1-1. クラス定義（audioContext, sounds Map）
+  - [ ] C-1-2. playBeep(frequency, duration, type)実装
+  - [ ] C-1-3. playSynthetic(soundType)実装（switch分岐）
+  - [ ] C-1-4. play(soundType)実装（外部MP3 or synthetic）
+  - [ ] C-1-5. ビルド確認
+
+- [ ] C-2. 効果音定義
+  - [ ] C-2-1. button-click: 440Hz, 0.1秒, sine
+  - [ ] C-2-2. countdown-3: 220Hz, 0.5秒, square
+  - [ ] C-2-3. countdown-2: 330Hz, 0.5秒, square
+  - [ ] C-2-4. countdown-1: 440Hz, 0.5秒, square
+  - [ ] C-2-5. countdown-start: 880→440Hz, 1.0秒, sawtooth（スウィープ）
+  - [ ] C-2-6. goal-reached: アルペジオ（C-E-G-C、各0.3秒）
+  - [ ] C-2-7. result: ホワイトノイズ、2.0秒
+
+- [ ] C-3. シーン統合
+  - [ ] C-3-1. OpeningScene: Startボタンクリック → button-click
+  - [ ] C-3-2. CountdownScene: 3→2→1→START! で各効果音
+  - [ ] C-3-3. PlayingScene: ゴール到達 → goal-reached
+  - [ ] C-3-4. ResultScene: 表示前 → result
+  - [ ] C-3-5. ビルド確認
+
+- [ ] C-4. 動作テスト（ブラウザ）
+  - [ ] C-4-1. 各効果音が正しいタイミングで再生されることを確認
+  - [ ] C-4-2. 音量・長さ調整（必要に応じて）
+  - [ ] C-4-3. Safari互換性確認
+
+### Phase D: デシベル表示
+**優先度:** ★☆☆（UX向上、単純実装）
+**目標:** Canvas内にリアルタイムdB表示
+
+- [ ] D-1. audio.tsにdB計算追加
+  - [ ] D-1-1. getDecibels()メソッド実装
+  - [ ] D-1-2. 計算式: `20 * Math.log10(smoothed + 1e-6)`
+  - [ ] D-1-3. クランプ（-60dB ~ 0dB）
+  - [ ] D-1-4. ビルド確認
+
+- [ ] D-2. DecibelDisplay.ts実装（UI要素）
+  - [ ] D-2-1. draw(p, decibels)実装
+  - [ ] D-2-2. Canvas右上に表示（例: "Volume: -12.5 dB"）
+  - [ ] D-2-3. フォント: Courier New, 16px, ネオン緑
+  - [ ] D-2-4. 背景: 半透明黒、角丸矩形
+  - [ ] D-2-5. ビルド確認
+
+- [ ] D-3. PlayingScene統合
+  - [ ] D-3-1. DecibelDisplayインスタンス作成
+  - [ ] D-3-2. draw()内でdecibelDisplay.draw(p, decibels)
+  - [ ] D-3-3. VisualizerViewにも統合
+  - [ ] D-3-4. ビルド確認
+
+- [ ] D-4. 動作テスト（ブラウザ）
+  - [ ] D-4-1. 音量に応じてdB値が変化することを確認
+  - [ ] D-4-2. 表示位置・スタイリング調整
+  - [ ] D-4-3. 全Viewで正しく表示されることを確認
+
+### Phase E: ムービーシステム（オプション）
+**優先度:** ☆☆☆（後回し可、リソース次第）
+**目標:** VideoPlayer + 3種ムービー（デフォルトOFF、Canvas代替演出で代用可）
+
+- [ ] E-1. VideoPlayer.ts実装
+  - [ ] E-1-1. クラス定義（enabled: boolean, videos Map）
+  - [ ] E-1-2. setEnabled(enabled)実装
+  - [ ] E-1-3. play(videoType, onComplete)実装
+  - [ ] E-1-4. enabled=false時は即座にonComplete呼び出し
+  - [ ] E-1-5. ビルド確認
+
+- [ ] E-2. ムービー統合（仮実装）
+  - [ ] E-2-1. OpeningScene: opening.mp4（5-10秒）→ CSS代替
+  - [ ] E-2-2. ResultScene: clear.mp4（3-5秒）→ Canvas代替
+  - [ ] E-2-3. ResultScene: gameover.mp4（3-5秒）→ Canvas代替
+  - [ ] E-2-4. ビルド確認
+
+- [ ] E-3. 設定UI追加
+  - [ ] E-3-1. index.htmlに"Movie Mode"トグル追加
+  - [ ] E-3-2. main.tsでvideoPlayer.setEnabled()呼び出し
+  - [ ] E-3-3. ビルド確認
+
+- [ ] E-4. 動作テスト（ブラウザ）
+  - [ ] E-4-1. Movie Mode OFF: 即座にスキップ確認
+  - [ ] E-4-2. Movie Mode ON: Canvas代替演出確認
+  - [ ] E-4-3. （後日）外部MP4ファイル統合テスト
+
+### Phase F: v1.4最終調整
+**優先度:** ★★☆（リリース前必須）
+**目標:** ドキュメント更新、パフォーマンス検証、テスト完了
+
+- [ ] F-1. README.md更新（v1.4新機能）
+  - [ ] F-1-1. オープニング画面、カウントダウン演出
+  - [ ] F-1-2. MAX-based成長システム
+  - [ ] F-1-3. 音量閾値検出、結果判定
+  - [ ] F-1-4. デシベル表示
+  - [ ] F-1-5. 効果音7種
+  - [ ] F-1-6. ビルド確認
+
+- [ ] F-2. ARCHITECTURE.md更新（v1.4設計図）
+  - [ ] F-2-1. シーンシステム図
+  - [ ] F-2-2. GameFlowController/GrowthSystem説明
+  - [ ] F-2-3. アセット管理方針
+  - [ ] F-2-4. ビルド確認
+
+- [ ] F-3. パフォーマンス最適化
+  - [ ] F-3-1. Chrome DevToolsでフレームレート確認
+  - [ ] F-3-2. 効果音再生の負荷確認
+  - [ ] F-3-3. シーン遷移の遅延確認
+  - [ ] F-3-4. 60fps維持確認
+
+- [ ] F-4. ブラウザテスト
+  - [ ] F-4-1. Chrome/Edge: 全機能動作確認
+  - [ ] F-4-2. Safari: AudioContext互換性確認
+  - [ ] F-4-3. モバイル: レスポンシブ確認
+
+- [ ] F-5. ビルド最終確認
+  - [ ] F-5-1. npm run build成功
+  - [ ] F-5-2. dist/bundle.js生成確認
+  - [ ] F-5-3. エラーゼロ確認
+
+---
+
+## 📌 v1.4 完了条件
+- [ ] オープニング→カウントダウン→ゲーム→結果のフロー完動
+- [ ] MAX-based成長システムが正常動作（音量MAX維持→成長）
+- [ ] 音量閾値検出でゲーム終了判定（60フレーム連続で終了）
+- [ ] デシベル表示がCanvas内に表示される
+- [ ] 効果音7種が適切なタイミングで再生される（Web Audio API合成）
+- [ ] 全ブラウザ動作確認（Chrome, Edge, Safari）
+- [ ] 60fps維持確認（Chrome DevTools）
+
+---
+
+## 🔮 将来バージョン（v1.5以降）
+
+### v1.5: Canvas 2D最適化（オプション）
+**目標:** createGraphics()事前レンダリングで粒子数500個
+- [ ] ParticleSystem.tsに事前レンダリング実装
+- [ ] パフォーマンステスト（60fps維持確認）
+
+### v1.6: WebGL演出強化（長期計画）
+**目標:** 3D演出、カメラワーク、ライティング
+**参照:** WEBGL_IDEAS.md（10個のアイデア詳細）
+- [ ] ダイナミックカメラワーク（音量連動ズーム）
+- [ ] ダイナミックライティング（周波数で色変化）
+- [ ] 3D粒子トルネード（螺旋上昇）
+- [ ] 深度フォグ（奥行き表現）

@@ -75,6 +75,13 @@ export class ViewManager {
     }
 
     /**
+     * v1.5: 現在のViewインスタンスを取得
+     */
+    getCurrentView(): IView {
+        return this.currentView;
+    }
+
+    /**
      * Easy Modeが有効かどうか
      */
     isEasyModeEnabled(): boolean {
@@ -105,5 +112,72 @@ export class ViewManager {
      */
     draw(p: p5): void {
         this.currentView.draw(p);
+    }
+
+    /**
+     * v1.5: 現在のView（Plant系のみ）の状態を取得
+     * @returns PlantState | null（Visualizerの場合はnull）
+     */
+    getCurrentPlantState(): string | null {
+        if (this.currentViewType === 'visualizer') {
+            return null;
+        }
+
+        // PlantView系にgetPlantStateメソッドがあればそれを呼ぶ
+        const view = this.currentView as any;
+        if (typeof view.getPlantState === 'function') {
+            return view.getPlantState();
+        }
+
+        return null;
+    }
+
+    /**
+     * v1.5: 現在のView（Plant系のみ）の残り時間を取得
+     * @returns 残り時間（秒）| null
+     */
+    getRemainingTime(): number | null {
+        if (this.currentViewType === 'visualizer') {
+            return null;
+        }
+
+        // PlantView系にgetRemainingTimeメソッドがあればそれを呼ぶ
+        const view = this.currentView as any;
+        if (typeof view.getRemainingTime === 'function') {
+            return view.getRemainingTime();
+        }
+
+        return null;
+    }
+
+    /**
+     * v1.5: 現在のView（Plant系のみ）をリセット
+     */
+    resetCurrentView(): void {
+        // PlantView系にresetメソッドがあればそれを呼ぶ
+        const view = this.currentView as any;
+        if (typeof view.reset === 'function') {
+            view.reset();
+        }
+    }
+
+    /**
+     * v1.5: すべてのViewインスタンスをリセット（新規ゲーム開始時）
+     */
+    reset(): void {
+        // すべてのView系にresetメソッドを呼ぶ
+        if (typeof (this.plantView as any).reset === 'function') {
+            (this.plantView as any).reset();
+        }
+        if (typeof (this.plantViewEasy as any).reset === 'function') {
+            (this.plantViewEasy as any).reset();
+        }
+        if (typeof (this.fractalPlantView as any).reset === 'function') {
+            (this.fractalPlantView as any).reset();
+        }
+        if (typeof (this.fractalPlantViewEasy as any).reset === 'function') {
+            (this.fractalPlantViewEasy as any).reset();
+        }
+        // VisualizerViewはstatelessなのでリセット不要
     }
 }

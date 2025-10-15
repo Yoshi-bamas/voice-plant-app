@@ -195,4 +195,65 @@ export class FractalPlantView implements IView {
         // 粒子を描画
         this.particles.draw(p);
     }
+
+    /**
+     * Challenge Mode用: 植物の高さを0にリセット
+     */
+    resetPlantHeight(): void {
+        if (this.plantState !== 'cleared') {
+            this.accumulatedHeight = 0;
+            this.smoothedVolume = 0;
+            this.particles.clear();
+            this.concrete = new ConcreteEffect();
+        }
+    }
+
+    /**
+     * Challenge Mode用: GameOver状態への遷移
+     */
+    transitionToGameOver(): void {
+        if (this.plantState === 'cleared') {
+            return;
+        }
+        this.plantState = 'gameOver';
+    }
+
+    /**
+     * Challenge Mode用: リセット完了チェック
+     */
+    isResetComplete(): boolean {
+        return true;
+    }
+
+    /**
+     * Challenge Mode用: 植物の状態を取得
+     */
+    getPlantState(): PlantState {
+        return this.plantState;
+    }
+
+    /**
+     * Challenge Mode用: リセット処理
+     */
+    reset(): void {
+        this.plantState = 'growing';
+        this.volume = 0;
+        this.frequencyLow = 0;
+        this.frequencyHigh = 0;
+        this.frequencyAverage = 0;
+        this.smoothedVolume = 0;
+        this.accumulatedHeight = 0;
+        this.clearedAccumulatedHeight = 0;
+        this.clearTriggered = false;
+
+        this.particles = new ParticleSystem();
+        this.concrete = new ConcreteEffect();
+    }
+
+    /**
+     * Challenge Mode用: 残り時間取得（v1.0版ではタイマーなし）
+     */
+    getRemainingTime(): number | null {
+        return null;
+    }
 }

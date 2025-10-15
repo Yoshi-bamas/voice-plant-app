@@ -162,4 +162,77 @@ export class PlantView implements IView {
         // 粒子を描画
         this.particles.draw(p);
     }
+
+    /**
+     * Challenge Mode用: 植物の高さを0にリセット
+     * ChallengeModeViewから呼び出される
+     */
+    resetPlantHeight(): void {
+        // v1.0版では単純に音量をリセット（cleared状態を保護）
+        if (this.plantState !== 'cleared') {
+            this.smoothedVolume = 0;
+            this.particles.clear();
+            this.concrete = new ConcreteEffect();
+        }
+    }
+
+    /**
+     * Challenge Mode用: GameOver状態への遷移
+     * ChallengeModeViewから呼び出される
+     */
+    transitionToGameOver(): void {
+        // cleared状態の場合はGameOverに遷移しない（成功状態を保護）
+        if (this.plantState === 'cleared') {
+            return;
+        }
+
+        this.plantState = 'gameOver';
+    }
+
+    /**
+     * Challenge Mode用: リセット完了チェック
+     * v1.0版ではアニメーションなしのため常にtrue
+     */
+    isResetComplete(): boolean {
+        return true;
+    }
+
+    /**
+     * Challenge Mode用: 植物の状態を取得
+     */
+    getPlantState(): PlantState {
+        return this.plantState;
+    }
+
+    /**
+     * Challenge Mode用: リセット処理
+     */
+    reset(): void {
+        this.plantState = 'growing';
+        this.volume = 0;
+        this.frequency = 0;
+        this.smoothedVolume = 0;
+        this.clearedHeight = 0;
+        this.clearTriggered = false;
+
+        // エフェクトをクリア
+        this.particles = new ParticleSystem();
+        this.concrete = new ConcreteEffect();
+    }
+
+    /**
+     * Challenge Mode用: 残り時間取得（v1.0版ではタイマーなし）
+     */
+    getRemainingTime(): number | null {
+        return null;
+    }
+
+    /**
+     * Challenge Mode用: プレビューモード用の高さ設定
+     */
+    setPreviewHeight(volume: number): void {
+        // EasyMode相当の増幅（×2.5）
+        const amplifiedVolume = Math.min(volume * 2.5, 1.0);
+        this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + amplifiedVolume * this.smoothingFactor;
+    }
 }

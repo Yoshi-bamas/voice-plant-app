@@ -17,6 +17,7 @@ export class VisualizerView implements IView {
     }
 
     draw(p: p5): void {
+        // v1.5.7: 座標変換は各Scene側で実施（PlayingScene/ChallengePlayingScene）
         drawCircularVisualizer(p, this.frequencyBands);
     }
 }
