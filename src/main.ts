@@ -172,16 +172,16 @@ const sketch = (p: p5) => {
             });
         }
 
-        // v1.5.7: マイク感度スライダー（対数スケール）
+        // v1.6: マイク感度スライダー（対数スケール、中央0.05）
         if (sensitivitySlider && sensitivityValue) {
             sensitivitySlider.addEventListener('input', () => {
                 const sliderValue = parseInt(sensitivitySlider.value); // 0-100
 
-                // 対数スケール変換: 0-100 → 0.001-0.20
-                // log10(0.001) = -3, log10(0.20) = -0.699
+                // 対数スケール変換: 0-100 → 0.005-0.15（中央50で0.05）
+                // log10(0.005) = -2.301, log10(0.15) = -0.824
                 // 線形補間: y = 10^(a + (b-a) * x/100)
-                const minLog = Math.log10(0.001);  // -3
-                const maxLog = Math.log10(0.20);   // -0.699
+                const minLog = Math.log10(0.005);  // -2.301
+                const maxLog = Math.log10(0.15);   // -0.824
                 const logValue = minLog + (maxLog - minLog) * (sliderValue / 100);
                 const value = Math.pow(10, logValue);
 

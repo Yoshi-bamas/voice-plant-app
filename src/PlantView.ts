@@ -18,10 +18,32 @@ export class PlantView implements IView {
     private smoothedVolume: number = 0;
     private readonly smoothingFactor: number = 0.3;
 
-    // v1.5.7: 持続時間ベース成長
+    // v1.6改: 2フェーズ成長システム（初動期間 + 継続成長）
     private accumulatedHeight: number = 0;  // 累積成長高さ（0-400px）
-    private readonly growthRate: number = 0.8;  // 1フレームあたりの成長量（400px到達まで約8秒）
-    private volumeThreshold: number = 0.008;  // v1.5.7: 成長開始閾値（デフォルト0.008、対数スケール0.001-0.20）
+    private volumeThreshold: number = 0.05;  // v1.6: 成長開始閾値（デフォルト0.05、範囲0.005-0.15）
+
+    // v1.6改: フェーズ管理
+    private readonly initialPhaseDuration: number = 1.5;  // 初動期間（秒）
+    private elapsedTime: number = 0;  // 経過時間（秒）
+    private baselineHeight: number = 0;  // 初動期間での最大到達高さ（ベースライン）
+    private sustainedGrowthAccumulated: number = 0;  // 継続成長の積み上げ
+
+    // v1.6改: 初動期間の音量→高さ変換係数
+    private readonly initialPhaseMultiplier: number = 3500;  // volume × 3500 = 最大350px（volume=0.10時）
+
+    // v1.6改: 10段階閾値設定（継続成長重視）
+    private readonly volumeThresholds = [
+        { threshold: 0.005, sustainedGrowth: 0.20 },   // Lv1: 最小限の声（基礎成長）
+        { threshold: 0.015, sustainedGrowth: 0.30 },   // Lv2: 少し大きく
+        { threshold: 0.025, sustainedGrowth: 0.40 },   // Lv3: 普通の声
+        { threshold: 0.040, sustainedGrowth: 0.50 },   // Lv4: やや大きい
+        { threshold: 0.060, sustainedGrowth: 0.60 },   // Lv5: 大きい
+        { threshold: 0.080, sustainedGrowth: 0.70 },   // Lv6: かなり大きい
+        { threshold: 0.100, sustainedGrowth: 0.85 },   // Lv7: 非常に大きい
+        { threshold: 0.120, sustainedGrowth: 1.00 },   // Lv8: 超大声
+        { threshold: 0.140, sustainedGrowth: 1.10 },   // Lv9: ほぼMAX
+        { threshold: 0.160, sustainedGrowth: 1.20 },   // Lv10: MAX（ボーナス）
+    ];
 
     // v1.0: 状態管理
     private plantState: PlantState = 'growing';
@@ -46,17 +68,52 @@ export class PlantView implements IView {
         // 音量をスムージング（表示用、揺れ演出で使用）
         this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + this.volume * this.smoothingFactor;
 
-        // v1.5.7: 持続時間ベース成長処理
+        // v1.6改: 2フェーズ成長システム
         if (this.plantState === 'growing') {
-            // 閾値以上の音量を維持している時間で成長
-            if (this.volume >= this.volumeThreshold) {
-                this.accumulatedHeight += this.growthRate;
+            // 経過時間を更新（60fps想定）
+            this.elapsedTime += 1 / 60;
+
+            // フェーズ1: 初動期間（0-1.5秒）
+            if (this.elapsedTime <= this.initialPhaseDuration) {
+                // 音量に純粋に比例した高さ（リアルタイム変動）
+                if (this.volume >= this.volumeThreshold) {
+                    const currentHeight = this.volume * this.initialPhaseMultiplier;
+                    this.accumulatedHeight = Math.min(currentHeight, 400);
+
+                    // ベースライン更新（この期間の最大値を記録）
+                    if (this.accumulatedHeight > this.baselineHeight) {
+                        this.baselineHeight = this.accumulatedHeight;
+                    }
+                } else {
+                    // 閾値未満の場合、前フレームの高さを維持
+                    this.accumulatedHeight = this.baselineHeight;
+                }
+            }
+            // フェーズ2: 継続成長期間（1.5秒以降）
+            else {
+                // ベースライン（初動での最大到達高さ）+ 継続成長の積み上げ
+                if (this.volume >= this.volumeThreshold) {
+                    // 現在の音量に応じたレベルを判定（10段階）
+                    let sustainedGrowth = 0;
+                    for (let i = this.volumeThresholds.length - 1; i >= 0; i--) {
+                        if (this.volume >= this.volumeThresholds[i].threshold) {
+                            sustainedGrowth = this.volumeThresholds[i].sustainedGrowth;
+                            break;
+                        }
+                    }
+
+                    // 継続成長を積み上げ
+                    this.sustainedGrowthAccumulated += sustainedGrowth;
+                }
+
+                // 合計高さ = ベースライン + 継続成長
+                this.accumulatedHeight = this.baselineHeight + this.sustainedGrowthAccumulated;
+
                 // 最大高さ400pxでクランプ
                 this.accumulatedHeight = Math.min(this.accumulatedHeight, 400);
             }
-            // 閾値未満の場合は成長停止（高さは維持）
 
-            // v1.5.7: Clear!判定（update内で実行、draw内での判定を廃止）
+            // Clear!判定
             if (this.accumulatedHeight >= this.clearThreshold * 400 && !this.clearTriggered) {
                 console.log(`[PlantView] Clear threshold reached! Height: ${this.accumulatedHeight}, Threshold: ${this.clearThreshold * 400}`);
                 this.transitionToCleared();
@@ -191,14 +248,20 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: 植物の高さを0にリセット
-     * v1.5.7: accumulatedHeightもリセット
+     * v1.6改: 2フェーズシステムの変数もリセット
      * ChallengeModeViewから呼び出される
      */
     resetPlantHeight(): void {
         // cleared状態を保護
         if (this.plantState !== 'cleared') {
             this.smoothedVolume = 0;
-            this.accumulatedHeight = 0;  // v1.5.7: 累積高さもリセット
+            this.accumulatedHeight = 0;
+
+            // v1.6改: 2フェーズシステム変数リセット
+            this.elapsedTime = 0;
+            this.baselineHeight = 0;
+            this.sustainedGrowthAccumulated = 0;
+
             this.particles.clear();
             this.concrete = new ConcreteEffect();
         }
@@ -237,16 +300,21 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: リセット処理
-     * v1.5.7: accumulatedHeightもリセット
+     * v1.6改: 2フェーズシステムの変数もリセット
      */
     reset(): void {
         this.plantState = 'growing';
         this.volume = 0;
         this.frequency = 0;
         this.smoothedVolume = 0;
-        this.accumulatedHeight = 0;  // v1.5.7: 累積高さもリセット
+        this.accumulatedHeight = 0;
         this.clearedHeight = 0;
         this.clearTriggered = false;
+
+        // v1.6改: 2フェーズシステム変数リセット
+        this.elapsedTime = 0;
+        this.baselineHeight = 0;
+        this.sustainedGrowthAccumulated = 0;
 
         // エフェクトをクリア
         this.particles = new ParticleSystem();

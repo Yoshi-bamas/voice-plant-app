@@ -22,11 +22,11 @@ export class VoiceContinuityDetector {
 
     /**
      * コンストラクタ
-     * @param volumeThreshold - 音量閾値（デフォルト0.008、対数スケール0.001-0.20）
+     * @param volumeThreshold - 音量閾値（デフォルト0.05、範囲0.005-0.15）
      * @param maxSilentFrames - 途切れ判定フレーム数（デフォルト90フレーム = 1.5秒@60fps）
      * @param graceSeconds - 無敵時間（秒、デフォルト3秒）
      */
-    constructor(volumeThreshold: number = 0.008, maxSilentFrames: number = 90, graceSeconds: number = 3) {
+    constructor(volumeThreshold: number = 0.05, maxSilentFrames: number = 90, graceSeconds: number = 3) {
         this.volumeThreshold = volumeThreshold;
         this.silentFrames = 0;
         this.maxSilentFrames = maxSilentFrames;

@@ -67,9 +67,8 @@ export class ResultScene implements IScene {
         // v1.5.2: HTMLオーバーレイ表示
         const overlay = document.getElementById('resultOverlay');
         const title = document.getElementById('resultTitle');
-        const message = document.getElementById('resultMessage');
 
-        if (overlay && title && message) {
+        if (overlay && title) {
             overlay.style.display = 'block';
             // v1.5.7: 初期opacity設定（GameOverはフェードイン、Clearは即座に表示）
             overlay.style.opacity = this.result === 'clear' ? '1' : '0';
@@ -77,13 +76,9 @@ export class ResultScene implements IScene {
             if (this.result === 'clear') {
                 title.textContent = 'CLEAR!';
                 title.style.color = '#ffd700';  // 金色
-                message.textContent = '目標を達成しました！';
-                message.style.color = '#00ff00';  // 緑
             } else {
                 title.textContent = 'GAME OVER';
                 title.style.color = '#ff3232';  // 赤
-                message.textContent = 'もう一度挑戦しましょう';
-                message.style.color = '#ff6464';  // 明るい赤
             }
         }
     }

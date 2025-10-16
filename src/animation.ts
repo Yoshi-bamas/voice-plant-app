@@ -44,7 +44,8 @@ function drawLeaf(p: p5, x: number, y: number, size: number, angle: number, r: n
 }
 
 /**
- * 茎を描画する関数（Simplexノイズで揺らぎ付き）
+ * 茎を描画する関数（WebGL 3D版、Simplexノイズで揺らぎ付き）
+ * v1.6: 3D円柱状の茎 + 球体の葉を複数配置
  * @param p - p5インスタンス
  * @param volume - 音量値（0-1）
  * @param frequency - 周波数平均値（0-1）
@@ -56,11 +57,7 @@ export function drawStem(p: p5, volume: number, frequency: number): void {
     // HSLをRGBに変換（彩度100%、明度50%）
     const [r, g, b] = hslToRgb(hue, 1.0, 0.5);
 
-    // 茎の色を設定（アナログに滑らかに変化）
-    p.stroke(r, g, b);
-    p.strokeWeight(8);
-
-    // 画面下部中央(width/2, height*0.9)から垂直に線を描画
+    // 画面下部中央(width/2, height*0.9)から垂直に線を描画（2D座標系）
     const baseX = p.width / 2;
     const baseY = p.height * 0.9;
 
@@ -72,41 +69,100 @@ export function drawStem(p: p5, volume: number, frequency: number): void {
     const noiseScale = 0.3; // ノイズの周波数
     const swayAmplitude = 15; // 揺れ幅（±15px）
 
-    // ベジェ曲線で滑らかな茎を描画（揺らぎ付き）
-    p.noFill();
-    p.beginShape();
-    p.vertex(baseX, baseY); // 基点
-
-    // 茎を複数セグメントに分けて描画（10セグメント）
+    // 茎を複数セグメントに分けて3D円柱で描画（10セグメント）
     const segments = 10;
-    for (let i = 1; i <= segments; i++) {
+    for (let i = 0; i < segments; i++) {
         const ratio = i / segments;
-        const y = baseY - stemHeight * ratio;
+        const nextRatio = (i + 1) / segments;
 
-        // ノイズで横方向の揺れを計算（高さに応じて揺れ幅増加）
-        const noiseValue = noise2D(time * noiseScale, ratio * 2);
-        const swayX = baseX + noiseValue * swayAmplitude * ratio;
+        // 現在のセグメントの位置
+        const y1 = baseY - stemHeight * ratio;
+        const noiseValue1 = noise2D(time * noiseScale, ratio * 2);
+        const x1 = baseX + noiseValue1 * swayAmplitude * ratio;
 
-        p.vertex(swayX, y);
+        // 次のセグメントの位置
+        const y2 = baseY - stemHeight * nextRatio;
+        const noiseValue2 = noise2D(time * noiseScale, nextRatio * 2);
+        const x2 = baseX + noiseValue2 * swayAmplitude * nextRatio;
+
+        // セグメントの中点と長さを計算
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const segmentLength = p.dist(x1, y1, x2, y2);
+        const angle = p.atan2(y2 - y1, x2 - x1);
+
+        // 3D円柱を描画
+        p.push();
+        p.translate(midX, midY, 0);
+        p.rotateZ(angle);
+        p.rotateY(p.HALF_PI);  // 円柱を横向きに
+        p.fill(r, g, b);
+        p.noStroke();
+        p.cylinder(4, segmentLength);  // 半径4px、長さ=セグメント長
+        p.pop();
     }
-    p.endShape();
 
-    // 茎の先端の座標を計算（葉の描画用）
-    const topNoiseValue = noise2D(time * noiseScale, 2);
-    const topX = baseX + topNoiseValue * swayAmplitude;
-    const topY = baseY - stemHeight;
+    // 茎の高さに応じて葉を配置（50px毎に1枚、最大8枚）
+    const leafInterval = 50;
+    const maxLeaves = Math.floor(stemHeight / leafInterval);
 
-    // 茎の中間地点に葉を1枚描画（揺らぎに追従）
-    if (stemHeight > 50) {
-        const leafRatio = 0.5; // 中間地点
+    for (let i = 1; i <= maxLeaves; i++) {
+        const leafRatio = i / (maxLeaves + 1);  // 0-1の範囲で均等配置
         const leafNoiseValue = noise2D(time * noiseScale, leafRatio * 2);
         const leafX = baseX + leafNoiseValue * swayAmplitude * leafRatio;
         const leafY = baseY - stemHeight * leafRatio;
-        const leafSize = 30;
 
-        // 葉の角度をノイズで動的に変化（-45° ~ -15°）
-        const leafAngle = -30 + noise2D(time * noiseScale * 0.5, 10) * 15;
+        // 葉のサイズを成長度合いで変化（下の葉ほど大きい）
+        const leafSize = 12 + (1 - leafRatio) * 8;  // 12-20px
 
-        drawLeaf(p, leafX, leafY, leafSize, leafAngle, r, g, b);
+        // 左右交互に葉を配置
+        const side = i % 2 === 0 ? 1 : -1;
+        const leafOffsetX = side * 20;
+
+        // 3D球体で葉を描画
+        p.push();
+        p.translate(leafX + leafOffsetX, leafY, 0);
+
+        // 葉の回転（ノイズで動的に変化）
+        const leafRotation = noise2D(time * noiseScale * 0.5, i * 10) * 0.3;
+        p.rotateZ(leafRotation);
+
+        p.fill(r * 0.8, g * 1.1, b * 0.8);  // 葉は少し明るい緑
+        p.noStroke();
+        p.sphere(leafSize);
+        p.pop();
+    }
+
+    // 茎の先端に花（Clear時に開花）
+    if (stemHeight > 300) {
+        const topNoiseValue = noise2D(time * noiseScale, 2);
+        const topX = baseX + topNoiseValue * swayAmplitude;
+        const topY = baseY - stemHeight;
+
+        // 花びら（5枚の球体を放射状配置）
+        const petalCount = 5;
+        const petalRadius = 15;
+        const flowerRadius = 20;
+
+        for (let i = 0; i < petalCount; i++) {
+            const angle = (i / petalCount) * p.TWO_PI;
+            const petalX = topX + p.cos(angle + time) * flowerRadius;
+            const petalY = topY + p.sin(angle + time) * flowerRadius;
+
+            p.push();
+            p.translate(petalX, petalY, 0);
+            p.fill(255, 100 + i * 30, 150);  // ピンク〜赤のグラデーション
+            p.noStroke();
+            p.sphere(petalRadius);
+            p.pop();
+        }
+
+        // 花の中心（黄色）
+        p.push();
+        p.translate(topX, topY, 0);
+        p.fill(255, 215, 0);  // 金色
+        p.noStroke();
+        p.sphere(12);
+        p.pop();
     }
 }
