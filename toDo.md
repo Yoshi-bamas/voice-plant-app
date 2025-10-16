@@ -598,32 +598,34 @@
   - [ ] D-4-2. 表示位置・スタイリング調整
   - [ ] D-4-3. 全Viewで正しく表示されることを確認
 
-### Phase E: ムービーシステム（オプション）
-**優先度:** ☆☆☆（後回し可、リソース次第）
-**目標:** VideoPlayer + 3種ムービー（デフォルトOFF、Canvas代替演出で代用可）
+### Phase E: ムービーシステム ✅
+**優先度:** ★★☆（v1.5実装完了）
+**目標:** VideoPlayer + Result動画（Clear/GameOver）
 
-- [ ] E-1. VideoPlayer.ts実装
-  - [ ] E-1-1. クラス定義（enabled: boolean, videos Map）
-  - [ ] E-1-2. setEnabled(enabled)実装
-  - [ ] E-1-3. play(videoType, onComplete)実装
-  - [ ] E-1-4. enabled=false時は即座にonComplete呼び出し
-  - [ ] E-1-5. ビルド確認
+- [x] E-1. VideoPlayer.ts実装 ✅
+  - [x] E-1-1. クラス定義（videoElement, isLoaded, onCompleteCallback）
+  - [x] E-1-2. preload(videoType)実装（事前読み込み）
+  - [x] E-1-3. play(result, onComplete)実装（7秒動画再生）
+  - [x] E-1-4. stop()実装（動画停止・非表示）
+  - [x] E-1-5. ビルド確認 ✅
 
-- [ ] E-2. ムービー統合（仮実装）
-  - [ ] E-2-1. OpeningScene: opening.mp4（5-10秒）→ CSS代替
-  - [ ] E-2-2. ResultScene: clear.mp4（3-5秒）→ Canvas代替
-  - [ ] E-2-3. ResultScene: gameover.mp4（3-5秒）→ Canvas代替
-  - [ ] E-2-4. ビルド確認
+- [x] E-2. ムービー統合 ✅
+  - [x] E-2-1. HTML: `<video id="resultVideo">` 要素追加
+  - [x] E-2-2. CSS: .result-video スタイル追加（フェード演出）
+  - [x] E-2-3. ResultScene: clear.mp4 → Retry画面遷移
+  - [x] E-2-4. ResultScene: gameover.mp4 → Retry画面遷移
+  - [x] E-2-5. ビルド確認 ✅（1.5mb, 683ms）
 
-- [ ] E-3. 設定UI追加
-  - [ ] E-3-1. index.htmlに"Movie Mode"トグル追加
-  - [ ] E-3-2. main.tsでvideoPlayer.setEnabled()呼び出し
-  - [ ] E-3-3. ビルド確認
+- [x] E-3. 動画アセット配置 ✅
+  - [x] E-3-1. public/videos/ ディレクトリ作成
+  - [x] E-3-2. clear.mp4 / gameover.mp4 配置準備（README.md作成）
+  - [x] E-3-3. 動画なし時のエラーハンドリング実装
 
-- [ ] E-4. 動作テスト（ブラウザ）
-  - [ ] E-4-1. Movie Mode OFF: 即座にスキップ確認
-  - [ ] E-4-2. Movie Mode ON: Canvas代替演出確認
-  - [ ] E-4-3. （後日）外部MP4ファイル統合テスト
+- [ ] E-4. 動作テスト（ユーザー側で実施）
+  - [ ] E-4-1. 動画ファイル配置（public/videos/clear.mp4, gameover.mp4）
+  - [ ] E-4-2. Clear時: 動画 → Retry画面遷移確認
+  - [ ] E-4-3. GameOver時: 動画 → Retry画面遷移確認
+  - [ ] E-4-4. 遅延なく演出開始することを確認
 
 ### Phase F: v1.4最終調整
 **優先度:** ★★☆（リリース前必須）

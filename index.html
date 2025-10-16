@@ -45,6 +45,16 @@
                 <p class="test-idle-desc2">View切替、Easy Mode、Clear Lineスライダーを試せます</p>
             </div>
 
+            <!-- v1.5: Phase E - 動画オーバーレイ -->
+            <!-- v1.5.8: パフォーマンス最適化属性追加 -->
+            <video id="resultVideo" class="result-video"
+                   preload="auto"
+                   playsinline
+                   muted="false"
+                   style="display: none;">
+                <!-- 動画ソースはVideoPlayer.tsで動的に設定 -->
+            </video>
+
             <!-- Existing Buttons (一部保持) -->
             <button id="startButton" class="start-button">Start</button>
             <button id="challengeButton" class="challenge-button">CHALLENGE!</button>

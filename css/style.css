@@ -308,6 +308,7 @@ body {
     height: 600px;
     pointer-events: none;
     z-index: 5;
+    transition: opacity 0.5s ease-in-out;
 }
 
 .result-title {
@@ -320,6 +321,56 @@ body {
     text-align: center;
     margin: 0;
     text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    animation: resultPulse 1s ease-in-out infinite;
+}
+
+/* v1.5.8: Clear時の特別アニメーション */
+.result-title--clear {
+    color: #ffd700;
+    text-shadow:
+        0 0 10px rgba(255, 215, 0, 1),
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 40px rgba(255, 215, 0, 0.6),
+        0 0 60px rgba(255, 215, 0, 0.4);
+    animation: clearGlow 0.8s ease-in-out infinite;
+}
+
+/* v1.5.8: GameOver時の特別アニメーション */
+.result-title--gameover {
+    color: #ff3232;
+    text-shadow:
+        0 0 10px rgba(255, 50, 50, 1),
+        0 0 20px rgba(255, 50, 50, 0.8),
+        0 0 40px rgba(255, 50, 50, 0.6);
+    animation: gameOverShake 0.1s ease-in-out infinite;
+}
+
+@keyframes resultPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+@keyframes clearGlow {
+    0%, 100% {
+        text-shadow:
+            0 0 10px rgba(255, 215, 0, 1),
+            0 0 20px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.6),
+            0 0 60px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        text-shadow:
+            0 0 20px rgba(255, 215, 0, 1),
+            0 0 40px rgba(255, 215, 0, 1),
+            0 0 60px rgba(255, 215, 0, 0.8),
+            0 0 80px rgba(255, 215, 0, 0.6);
+    }
+}
+
+@keyframes gameOverShake {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    25% { transform: translateX(-50%) translateY(-2px); }
+    75% { transform: translateX(-50%) translateY(2px); }
 }
 
 .result-message {
@@ -737,4 +788,20 @@ body {
         padding: 15px;
         gap: 15px;
     }
+}
+
+/* v1.5: Phase E - 動画オーバーレイ */
+.result-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 600px;
+    object-fit: cover;  /* 動画をCanvasサイズに合わせる */
+    z-index: 25;  /* result-overlayより上に表示 */
+    display: none;  /* デフォルトは非表示 */
+    opacity: 0;
+    /* v1.5.8: transitionを削除（JavaScriptで0.7秒フェード制御） */
+    pointer-events: none;  /* クリックイベントを透過 */
 }
