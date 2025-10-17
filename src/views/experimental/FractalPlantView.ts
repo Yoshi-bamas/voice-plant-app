@@ -34,6 +34,8 @@ export class FractalPlantView implements IView {
     private targetHeight: number = 0;  // 目標高さ（70-90%の範囲）
     private isQuickGrowth: boolean = false;  // 大声検知フラグ
     private maxAllowedLevel: number = 5;  // Phase 2で使える最大レベル（初期音量で決定）
+    private hasVoiceStarted: boolean = false;  // v1.7.3: 発声開始フラグ
+    private volumeThreshold: number = 0.05;  // 成長開始閾値（デフォルト0.05）
 
     // v1.7.2: 段階的延長成長設定（px/秒、3倍速・10段階評価）
     private readonly sustainedGrowthLevels = [
@@ -77,8 +79,16 @@ export class FractalPlantView implements IView {
 
         // v1.7.1: 2フェーズ成長システム（初期サンプリング + 段階的延長）
         if (this.plantState === 'growing') {
-            // 経過時間を更新（60fps想定）
-            this.elapsedTime += 1 / 60;
+            // v1.7.3: 発声検知後のみ経過時間をカウント
+            if (!this.hasVoiceStarted && this.volume >= this.volumeThreshold) {
+                this.hasVoiceStarted = true;
+                console.log('[FractalPlantView] Voice detected, starting growth');
+            }
+
+            // 発声開始後のみ経過時間を更新（60fps想定）
+            if (this.hasVoiceStarted) {
+                this.elapsedTime += 1 / 60;
+            }
 
             // Phase 1: 初期成長（0-0.8秒）- 音量サンプリング + イージング成長
             if (this.elapsedTime <= this.initialPhaseDuration) {
@@ -309,6 +319,7 @@ export class FractalPlantView implements IView {
             this.targetHeight = 0;
             this.isQuickGrowth = false;
             this.maxAllowedLevel = 5;
+            this.hasVoiceStarted = false;  // v1.7.3: 発声開始フラグリセット
 
             this.particles.clear();
             this.concrete = new ConcreteEffect();
@@ -360,6 +371,7 @@ export class FractalPlantView implements IView {
         this.targetHeight = 0;
         this.isQuickGrowth = false;
         this.maxAllowedLevel = 5;
+        this.hasVoiceStarted = false;  // v1.7.3: 発声開始フラグリセット
 
         this.particles = new ParticleSystem();
         this.concrete = new ConcreteEffect();

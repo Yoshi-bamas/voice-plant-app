@@ -33,6 +33,7 @@ export class PlantView implements IView {
     private targetHeight: number = 0;  // 目標高さ（70-90%の範囲）
     private isQuickGrowth: boolean = false;  // 大声検知フラグ
     private maxAllowedLevel: number = 5;  // Phase 2で使える最大レベル（初期音量で決定）
+    private hasVoiceStarted: boolean = false;  // v1.7.3: 発声開始フラグ
 
     // v1.7.2: 段階的延長成長設定（px/秒、3倍速・10段階評価）
     private readonly sustainedGrowthLevels = [
@@ -73,8 +74,16 @@ export class PlantView implements IView {
 
         // v1.7.1: 2フェーズ成長システム（初期サンプリング + 段階的延長）
         if (this.plantState === 'growing') {
-            // 経過時間を更新（60fps想定）
-            this.elapsedTime += 1 / 60;
+            // v1.7.3: 発声検知後のみ経過時間をカウント
+            if (!this.hasVoiceStarted && this.volume >= this.volumeThreshold) {
+                this.hasVoiceStarted = true;
+                console.log('[PlantView] Voice detected, starting growth');
+            }
+
+            // 発声開始後のみ経過時間を更新（60fps想定）
+            if (this.hasVoiceStarted) {
+                this.elapsedTime += 1 / 60;
+            }
 
             // Phase 1: 初期成長（0-0.8秒）- 音量サンプリング + イージング成長
             if (this.elapsedTime <= this.initialPhaseDuration) {
@@ -312,6 +321,7 @@ export class PlantView implements IView {
             this.targetHeight = 0;
             this.isQuickGrowth = false;
             this.maxAllowedLevel = 5;
+            this.hasVoiceStarted = false;  // v1.7.3: 発声開始フラグリセット
 
             this.particles.clear();
             this.concrete = new ConcreteEffect();
@@ -368,6 +378,7 @@ export class PlantView implements IView {
         this.targetHeight = 0;
         this.isQuickGrowth = false;
         this.maxAllowedLevel = 5;
+        this.hasVoiceStarted = false;  // v1.7.3: 発声開始フラグリセット
 
         // エフェクトをクリア
         this.particles = new ParticleSystem();
@@ -383,10 +394,19 @@ export class PlantView implements IView {
 
     /**
      * Challenge Mode用: プレビューモード用の高さ設定
+     * v1.7.2: 音量の微分で30-70%を行き来するように調整
      */
     setPreviewHeight(volume: number): void {
-        // EasyMode相当の増幅（×2.5）
-        const amplifiedVolume = Math.min(volume * 2.5, 1.0);
+        // 音量を増幅（×10で高感度化）
+        const amplifiedVolume = Math.min(volume * 10, 1.0);
+
+        // スムージング
         this.smoothedVolume = this.smoothedVolume * (1 - this.smoothingFactor) + amplifiedVolume * this.smoothingFactor;
+
+        // 30-70%の範囲にマッピング（120-280px）
+        // smoothedVolume 0-1 → 30-70%
+        const minHeight = 120;  // 30% of 400px
+        const maxHeight = 280;  // 70% of 400px
+        this.accumulatedHeight = minHeight + this.smoothedVolume * (maxHeight - minHeight);
     }
 }
