@@ -97,6 +97,11 @@ export class VideoPlayer {
         this.isFading = true;
         this.fadeInTimer = 0;
 
+        // 音声を有効化（ミュート解除）
+        this.videoElement.muted = false;
+        this.videoElement.volume = 1.0;  // 音量100%
+        console.log('[VideoPlayer] Audio enabled: muted=false, volume=1.0');
+
         // 再生開始
         this.videoElement.currentTime = 0;  // 最初から再生
         this.videoElement.play().catch((error) => {
@@ -165,7 +170,9 @@ export class VideoPlayer {
     private getVideoPath(videoType: VideoType): string {
         // public/videos/ ディレクトリからの相対パス
         // プロジェクトルートから配信される場合は /public/ を含める
-        return `/public/videos/${videoType}.mp4`;
+        const path = `/public/videos/${videoType}.mp4`;
+        console.log(`[VideoPlayer] getVideoPath(${videoType}) -> ${path}`);
+        return path;
     }
 
     /**

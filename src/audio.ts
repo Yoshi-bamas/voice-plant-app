@@ -113,6 +113,14 @@ export class AudioAnalyzer {
         return Array.from(this.frequencyArray).map(value => value / 255);
     }
 
+    /**
+     * v1.5.8: AudioContextを取得（SoundManager用）
+     * @returns AudioContextインスタンス
+     */
+    getAudioContext(): AudioContext | null {
+        return this.audioContext;
+    }
+
     dispose(): void {
         if (this.microphone) {
             this.microphone.disconnect();

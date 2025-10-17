@@ -82,6 +82,14 @@ export class CountdownScene implements IScene {
             this.frameCounter = 0;
             this.countdown--;
 
+            // v1.5.8: カウントダウン音を再生
+            const soundManager = this.sceneManager.getSoundManager();
+            if (this.countdown > 0) {
+                soundManager?.playSE('countdown');  // 3,2,1
+            } else if (this.countdown === 0) {
+                soundManager?.playSE('start');  // START!
+            }
+
             // v1.5.7: カウントダウン終了 → モードに応じて適切なシーンへ遷移
             if (this.countdown < 0) {
                 const currentMode = this.sceneManager.getMode();

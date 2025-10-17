@@ -61,18 +61,21 @@ export class ResultScene implements IScene {
         this.transitionAlpha = 0;
         this.crackLines = [];
 
-        // v1.5.8: 初期エフェクト開始
+        // v1.5.8: 初期エフェクト開始 + 効果音再生
+        const soundManager = this.sceneManager.getSoundManager();
         if (this.result === 'clear') {
-            // Clear: 粒子バースト + 初期フラッシュ
+            // Clear: 粒子バースト + 初期フラッシュ + 効果音
             this.particles.burst(400, 300, 300);
             this.flashAlpha = 255;  // 白フラッシュ
             this.fadeAlpha = 0;     // テキストフェードイン準備
+            soundManager?.playSE('clear');  // Clear効果音
         } else {
-            // GameOver: シェイク + 赤フラッシュ
+            // GameOver: シェイク + 赤フラッシュ + 効果音
             this.shakeFrames = this.shakeDuration;
             this.flashAlpha = 200;  // 赤フラッシュ
             this.fadeAlpha = 0;
             this.generateCrackLines();  // ひび割れライン生成
+            soundManager?.playSE('gameover');  // GameOver効果音
         }
 
         // v1.5.8: HTMLオーバーレイを即座に表示（演出開始）

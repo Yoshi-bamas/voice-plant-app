@@ -11,6 +11,7 @@
 import p5 from 'p5';
 import { IScene } from '../types';
 import { AudioAnalyzer } from '../audio';
+import { SoundManager } from '../systems/SoundManager';
 
 export type SceneType =
     | 'modeSelect'           // v1.5: モード選択画面
@@ -36,6 +37,7 @@ export class SceneManager {
     private currentSceneType: SceneType | null = null;
     private currentMode: GameMode = 'test';  // v1.5: デフォルトはTest Mode
     private scenes: Map<SceneType, IScene> = new Map();
+    private soundManager: SoundManager | null = null;  // v1.5.8: サウンド管理
 
     /**
      * シーンを登録
@@ -121,5 +123,22 @@ export class SceneManager {
      */
     getMode(): GameMode {
         return this.currentMode;
+    }
+
+    /**
+     * v1.5.8: SoundManagerを設定
+     * @param soundManager - SoundManagerインスタンス
+     */
+    setSoundManager(soundManager: SoundManager): void {
+        this.soundManager = soundManager;
+        console.log('[SceneManager] SoundManager registered');
+    }
+
+    /**
+     * v1.5.8: SoundManagerを取得
+     * @returns SoundManagerインスタンス
+     */
+    getSoundManager(): SoundManager | null {
+        return this.soundManager;
     }
 }

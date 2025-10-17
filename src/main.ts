@@ -12,13 +12,16 @@ import { CountdownScene } from './scenes/CountdownScene';
 import { PlayingScene } from './scenes/PlayingScene';
 import { ChallengePlayingScene } from './scenes/ChallengePlayingScene';
 import { ResultScene } from './scenes/ResultScene';
+import { SoundManager } from './systems/SoundManager';  // v1.5.8
 
 let audioAnalyzer: AudioAnalyzer | null = null;
 let viewManager: ViewManager | null = null;
 let sceneManager: SceneManager | null = null;
+let soundManager: SoundManager | null = null;  // v1.5.8
 let isAudioInitialized = false;
 
 // v1.5.1: マイク初期化関数（グローバル、シーンから呼び出し可能）
+// v1.5.8: SoundManager初期化も追加
 async function initializeAudioGlobal(): Promise<void> {
     if (!isAudioInitialized) {
         try {
@@ -26,6 +29,19 @@ async function initializeAudioGlobal(): Promise<void> {
             await audioAnalyzer.initialize();
             isAudioInitialized = true;
             console.log('[main.ts] AudioAnalyzer initialized');
+
+            // v1.5.8: SoundManagerを初期化（同じAudioContextを使用）
+            const audioContext = audioAnalyzer.getAudioContext();
+            if (audioContext) {
+                soundManager = new SoundManager(audioContext);
+                if (sceneManager) {
+                    sceneManager.setSoundManager(soundManager);
+                }
+                // 効果音をプリロード（非同期、エラー無視）
+                soundManager.preload(['click', 'countdown', 'start', 'clear', 'gameover']).catch((error) => {
+                    console.warn('[main.ts] Sound preload failed (non-critical):', error);
+                });
+            }
         } catch (error) {
             console.error('マイク初期化エラー:', error);
             alert('マイクへのアクセスが必要です。ブラウザの設定を確認してください。');
@@ -100,6 +116,7 @@ const sketch = (p: p5) => {
         const backButton = document.getElementById('backButton');
 
         // v1.4: Startボタン（OpeningSceneが管理するが、ここでマイク初期化）
+        // v1.5.8: SoundManager初期化も追加
         if (startButton) {
             startButton.addEventListener('click', async () => {
                 if (!isAudioInitialized) {
@@ -108,6 +125,18 @@ const sketch = (p: p5) => {
                         await audioAnalyzer.initialize();
                         isAudioInitialized = true;
                         console.log('[main.ts] AudioAnalyzer initialized');
+
+                        // v1.5.8: SoundManagerを初期化
+                        const audioContext = audioAnalyzer.getAudioContext();
+                        if (audioContext) {
+                            soundManager = new SoundManager(audioContext);
+                            if (sceneManager) {
+                                sceneManager.setSoundManager(soundManager);
+                            }
+                            soundManager.preload(['click', 'countdown', 'start', 'clear', 'gameover']).catch((error) => {
+                                console.warn('[main.ts] Sound preload failed (non-critical):', error);
+                            });
+                        }
                     } catch (error) {
                         console.error('マイク初期化エラー:', error);
                         alert('マイクへのアクセスが必要です。ブラウザの設定を確認してください。');
@@ -119,6 +148,7 @@ const sketch = (p: p5) => {
         // Plant ボタン
         if (plantButton) {
             plantButton.addEventListener('click', () => {
+                soundManager?.playSE('click');  // v1.5.8: クリック音
                 if (viewManager) {
                     viewManager.switchView('plant');
                     plantButton.classList.add('view-button--active');
@@ -131,6 +161,7 @@ const sketch = (p: p5) => {
         // Visualizer ボタン
         if (visualizerButton) {
             visualizerButton.addEventListener('click', () => {
+                soundManager?.playSE('click');  // v1.5.8: クリック音
                 if (viewManager) {
                     viewManager.switchView('visualizer');
                     visualizerButton.classList.add('view-button--active');
@@ -143,6 +174,7 @@ const sketch = (p: p5) => {
         // Fractal ボタン
         if (fractalButton) {
             fractalButton.addEventListener('click', () => {
+                soundManager?.playSE('click');  // v1.5.8: クリック音
                 if (viewManager) {
                     viewManager.switchView('fractal');
                     fractalButton.classList.add('view-button--active');
